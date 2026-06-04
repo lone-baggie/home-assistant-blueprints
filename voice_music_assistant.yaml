@@ -1,0 +1,296 @@
+blueprint:
+  name: Voice Control for Music Assistant
+  author: Lonebaggie
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🗣️ Voice Control for Music Assistant
+    
+    Assign voice satellites to specific areas and map them to separate, high-quality 
+    speakers (or use the voice speaker itself). Supports playing by artist, album, 
+    playlist, or radio station, with full support for shuffle, stop, and volume controls.
+    
+    <br>
+    
+    <details>
+      <summary><b>ℹ️ Click to view Voice Command Syntax Guide</b></summary>
+      <br>
+      When adjusting the phrases below, use these wildcards to fine-tune your commands:
+      
+      * <b>[Square Brackets]</b> = Optional text. The sentence triggers with or without these words.
+        * <i>Example:</i> <code>[the]</code> matches both "play album" and "play the album".
+        
+      * <b>(Parentheses | with | pipes)</b> = Alternation (OR). Matches any single phrase listed.
+        * <i>Example:</i> <code>(play|listen to)</code> matches "play..." or "listen to...".
+        
+      * <b>{Curly Braces}</b> = Wildcard slots. These extract the text to pass to Music Assistant.
+        * <i>Warning:</i> Do not change the text inside these braces (<code>{artist}</code>, <code>{album}</code>, <code>{playlist}</code>, <code>{radio}</code>).
+        
+      * <b>Nested Brackets</b> = Extra layers of options. <code>[by {artist}]</code> means the artist name is completely optional.
+    </details>
+  domain: automation
+  input:
+    # --- Default Target Selection Section ---
+    default_speaker_options:
+      name: Default Speaker
+      icon: mdi:speaker
+      collapsed: false
+      input:
+        default_speaker:
+          name: Speaker
+          description: The fallback speaker to use if the voice command doesn't come from a specific area (like text dashboards).
+          selector:
+            entity:
+              filter:
+                - domain: media_player
+
+    # --- Collapsible Speaker Mapping Section ---
+    speaker_mapping_options:
+      name: Speaker Mappings
+      icon: mdi:speaker-multiple
+      description: Link your voice satellite areas to your target media players.
+      collapsed: true
+      input:
+        area_speaker_map:
+          name: Area-to-Speaker Mapping
+          description: |
+            Links a speaker to the area a voice was heard. If the voice satellite has no area, the default speaker is used.
+            
+            Example format:
+            ```yaml
+            kitchen: media_player.kitchen_speaker
+            living_room: media_player.google_home
+            ```
+          default:
+            living_room: media_player.google_home
+            kitchen: media_player.kitchen_speaker
+            front_room: media_player.front_room_speaker
+            bedroom: media_player.bedroom_clock
+          selector:
+            object:
+
+    # --- Collapsible Artist Section ---
+    artist_options:
+      name: Artist Voice Commands
+      icon: mdi:account-music
+      description: Custom phrases for managing artist selection and playback.
+      collapsed: true
+      input:
+        artist_sentence_1:
+          name: Play Artist Phrase
+          description: >
+            Phrase used to play an artist's music.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(play|listen to|put on|stream) [the ](artist|band|group|musician) {artist}"
+          selector:
+            text:
+        artist_sentence_2:
+          name: Shuffle Artist Phrase
+          description: >
+            Phrase used to shuffle an artist's music.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(shuffle|randomise) [the ](artist|band|group|musician) {artist}"
+          selector:
+            text:
+
+    # --- Collapsible Playlist Section ---
+    playlist_options:
+      name: Playlist Voice Commands
+      icon: mdi:playlist-music
+      description: Custom phrases for managing playlist selection and playback.
+      collapsed: true
+      input:
+        playlist_sentence_1:
+          name: Play Playlist Phrase
+          description: >
+            Phrase used to play a specific playlist.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{playlist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(play|listen to|put on|stream) [the ](playlist) {playlist}"
+          selector:
+            text:
+        playlist_sentence_2:
+          name: Shuffle Playlist Phrase
+          description: >
+            Phrase used to shuffle a specific playlist.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{playlist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(shuffle|randomise) [the ](playlist) {playlist}"
+          selector:
+            text:
+
+    # --- Collapsible Album Section ---
+    album_options:
+      name: Album Voice Commands
+      icon: mdi:album
+      description: Custom phrases for managing album selection and playback.
+      collapsed: true
+      input:
+        album_sentence_1:
+          name: Play Album Phrase
+          description: >
+            Phrase used to play an album.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{album}</b></code> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(play|listen to|put on|stream) [the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}]"
+          selector:
+            text:
+        album_sentence_2:
+          name: Shuffle Album Phrase
+          description: >
+            Phrase used to shuffle an album.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{album}</b></code> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(shuffle|randomise)[the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}]"
+          selector:
+            text:
+
+    # --- Collapsible Radio Section ---
+    radio_options:
+      name: Radio Voice Commands
+      icon: mdi:radio
+      description: Custom phrases for tuning into radio stations.
+      collapsed: true
+      input:
+        radio_sentence:
+          name: Play Radio Phrase
+          description: >
+            Phrase used to tune into a radio station.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{radio}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(play|listen to|put on|turn on|stream) [the ](radio|BBC|station|radio station) {radio}"
+          selector:
+            text:
+
+    # --- Collapsible Audio Controls Section ---
+    audio_controls:
+      name: System Controls (Volume & Stop)
+      icon: mdi:volume-high
+      description: Custom phrases for managing volume scaling and halting playback.
+      collapsed: true
+      input:
+        volume_up_sentence:
+          name: Volume Up Phrase
+          description: >
+            Phrase used to turn up the volume.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(volume up|louder|turn it up|crank it up|raise the volume)"
+          selector:
+            text:
+        volume_down_sentence:
+          name: Volume Down Phrase
+          description: >
+            Phrase used to lower the volume.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(volume down|quieter|turn it down|lower the volume)"
+          selector:
+            text:
+        stop_sentence:
+          name: Stop Music Phrase
+          description: >
+            Phrase used to halt playback.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(stop|cancel|pause|hush|shut up) [the ][music|audio|radio|playback]"
+          selector:
+            text:
+
+mode: single
+
+trigger:
+  - trigger: conversation
+    command:
+      - !input artist_sentence_1
+      - !input artist_sentence_2
+    id: artist
+  - trigger: conversation
+    command:
+      - !input playlist_sentence_1
+      - !input playlist_sentence_2
+    id: playlist
+  - trigger: conversation
+    command:
+      - !input album_sentence_1
+      - !input album_sentence_2
+    id: album
+  - trigger: conversation
+    command:
+      - !input radio_sentence
+    id: radio
+  - trigger: conversation
+    command:
+      - !input volume_up_sentence
+    id: volume_up
+  - trigger: conversation
+    command:
+      - !input volume_down_sentence
+    id: volume_down
+  - trigger: conversation
+    command:
+      - !input stop_sentence
+    id: media_stop
+
+condition: []
+
+action:
+  - variables:
+      speakers: !input area_speaker_map
+      default_target: !input default_speaker
+
+      device: "{{ trigger.device_id | default('', true) }}"
+      area: "{{ area_id(device) if device != '' else 'none' }}"
+
+      speaker: >-
+        {% if area != 'none' and speakers.get(area) is defined %}
+          {{ speakers.get(area) }}
+        {% else %}
+          {{ default_target }}
+        {% endif %}
+
+      radio: "{{ trigger.slots.radio | default('') }}"
+      artist: "{{ trigger.slots.artist | default('') }}"
+      album: "{{ trigger.slots.album | default('') }}"
+      playlist: "{{ trigger.slots.playlist | default('') }}"
+
+      media_type: "{{ trigger.id.split('_') | first }}"
+      action: >-
+        {% if trigger.id in ['volume_up', 'volume_down'] %}
+          media_player.{{ trigger.id }}
+        {% elif trigger.id == 'media_stop' %}
+          media_player.media_stop
+        {% else %}
+          media_player.{{ media_type }}
+        {% endif %}
+
+      media_id: "{{ radio }} {{ artist }} {{ album }} {{ playlist }}"
+      shuffle: >-
+        {{ 'shuffle' in trigger.sentence | lower or 'random' in trigger.sentence | lower }}
+
+  - action: media_player.shuffle_set
+    target:
+      entity_id: "{{ speaker }}"
+    data:
+      shuffle: false
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['media_stop', 'volume_down', 'volume_up'] }}"
+        sequence:
+          - action: "{{ action }}"
+            target:
+              entity_id: "{{ speaker }}"
+            data: {}
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['artist', 'album', 'radio', 'playlist'] }}"
+        sequence:
+          - action: media_player.shuffle_set
+            target:
+              entity_id: "{{ speaker }}"
+            data:
+              shuffle: "{{ shuffle }}"
+          - action: music_assistant.play_media
+            target:
+              entity_id: "{{ speaker }}"
+            data:
+              media_id: "{{ media_id | trim }}"
+              artist: "{{ artist }}"
+              album: "{{ album }}"
+              enqueue: play
+              media_type: "{{ media_type }}"
