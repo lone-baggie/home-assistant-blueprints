@@ -4,6 +4,7 @@ blueprint:
   homeassistant:
     min_version: 2024.6.0
   description: >
+    
     ### 🗣️ Voice Control for Music Assistant
     
     Assign voice satellites to specific areas and map them to separate, high-quality 
