@@ -4,12 +4,11 @@ blueprint:
   homeassistant:
     min_version: 2024.6.0
   description: >
-    
     ### 🗣️ Voice Control for Music Assistant
     
     Assign voice satellites to specific areas and map them to separate, high-quality 
     speakers (or use the voice speaker itself). Supports playing by artist, album, 
-    playlist, or radio station, with full support for shuffle, stop, and volume controls.
+    song, playlist, or radio station, with full support for shuffle, stop, and volume controls.
     
     <br>
     
@@ -25,7 +24,7 @@ blueprint:
         * <i>Example:</i> <code>(play|listen to)</code> matches "play..." or "listen to...".
         
       * <b>{Curly Braces}</b> = Wildcard slots. These extract the text to pass to Music Assistant.
-        * <i>Warning:</i> Do not change the text inside these braces (<code>{artist}</code>, <code>{album}</code>, <code>{playlist}</code>, <code>{radio}</code>).
+        * <i>Warning:</i> Do not change the text inside these braces (<code>{artist}</code>, <code>{album}</code>, <code>{track}</code>, <code>{playlist}</code>, <code>{radio}</code>).
         
       * <b>Nested Brackets</b> = Extra layers of options. <code>[by {artist}]</code> means the artist name is completely optional.
     </details>
@@ -91,6 +90,30 @@ blueprint:
             Phrase used to shuffle an artist's music.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
           default: "(shuffle|randomise) [the ](artist|band|group|musician) {artist}"
+          selector:
+            text:
+
+    # --- Collapsible Track / Song Section ---
+    track_options:
+      name: Song Voice Commands
+      icon: mdi:music-note
+      description: Custom phrases for playing specific songs or tracks.
+      collapsed: true
+      input:
+        track_sentence_1:
+          name: Play Song Phrase
+          description: >
+            Phrase used to play a specific song or track.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{track}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(play|listen to|put on|stream) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}]"
+          selector:
+            text:
+        track_sentence_2:
+          name: Shuffle Song Phrase
+          description: >
+            Phrase used to play a song with shuffling/radio fallback enabled.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{track}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(shuffle|randomise) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}]"
           selector:
             text:
 
@@ -160,11 +183,27 @@ blueprint:
 
     # --- Collapsible Audio Controls Section ---
     audio_controls:
-      name: System Controls (Volume & Stop)
+      name: System Controls (Playback, Volume & Stop)
       icon: mdi:volume-high
-      description: Custom phrases for managing volume scaling and halting playback.
+      description: Custom phrases for managing volume, tracking skipping, and halting playback.
       collapsed: true
       input:
+        next_sentence:
+          name: Next Track Phrase
+          description: >
+            Phrase used to skip to the next track.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(next track|next song|skip|skip track|skip song)"
+          selector:
+            text:
+        previous_sentence:
+          name: Previous Track Phrase
+          description: >
+            Phrase used to return to the previous track.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(previous track|previous song|back|go back)"
+          selector:
+            text:
         volume_up_sentence:
           name: Volume Up Phrase
           description: >
@@ -200,6 +239,11 @@ trigger:
     id: artist
   - trigger: conversation
     command:
+      - !input track_sentence_1
+      - !input track_sentence_2
+    id: track
+  - trigger: conversation
+    command:
       - !input playlist_sentence_1
       - !input playlist_sentence_2
     id: playlist
@@ -212,6 +256,14 @@ trigger:
     command:
       - !input radio_sentence
     id: radio
+  - trigger: conversation
+    command:
+      - !input next_sentence
+    id: media_next
+  - trigger: conversation
+    command:
+      - !input previous_sentence
+    id: media_previous
   - trigger: conversation
     command:
       - !input volume_up_sentence
@@ -246,6 +298,7 @@ action:
       artist: "{{ trigger.slots.artist | default('') }}"
       album: "{{ trigger.slots.album | default('') }}"
       playlist: "{{ trigger.slots.playlist | default('') }}"
+      track: "{{ trigger.slots.track | default('') }}"
 
       media_type: "{{ trigger.id.split('_') | first }}"
       action: >-
@@ -253,11 +306,15 @@ action:
           media_player.{{ trigger.id }}
         {% elif trigger.id == 'media_stop' %}
           media_player.media_stop
+        {% elif trigger.id == 'media_next' %}
+          media_player.media_next_track
+        {% elif trigger.id == 'media_previous' %}
+          media_player.media_previous_track
         {% else %}
           media_player.{{ media_type }}
         {% endif %}
 
-      media_id: "{{ radio }} {{ artist }} {{ album }} {{ playlist }}"
+      media_id: "{{ radio }} {{ artist }} {{ album }} {{ playlist }} {{ track }}"
       shuffle: >-
         {{ 'shuffle' in trigger.sentence | lower or 'random' in trigger.sentence | lower }}
 
@@ -270,7 +327,7 @@ action:
   - choose:
       - conditions:
           - condition: template
-            value_template: "{{ trigger.id in ['media_stop', 'volume_down', 'volume_up'] }}"
+            value_template: "{{ trigger.id in ['media_stop', 'media_next', 'media_previous', 'volume_down', 'volume_up'] }}"
         sequence:
           - action: "{{ action }}"
             target:
@@ -279,7 +336,7 @@ action:
 
       - conditions:
           - condition: template
-            value_template: "{{ trigger.id in ['artist', 'album', 'radio', 'playlist'] }}"
+            value_template: "{{ trigger.id in ['artist', 'track', 'album', 'radio', 'playlist'] }}"
         sequence:
           - action: media_player.shuffle_set
             target:
