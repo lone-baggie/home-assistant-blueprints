@@ -1,0 +1,169 @@
+blueprint:
+  name: "Voice Satellite: Read Shopping List"
+  author: "Lone baggie"
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🛒 Shopping List Reader for Voice Satellites
+    
+    Reads out the current items on your shopping list from any voice satellites.
+  domain: automation
+  input:
+    # --- Core Hardware Options Group ---
+    core_hardware_options:
+      name: To-Do & Media Entities
+      icon: mdi:devices
+      collapsed: false
+      input:
+        todo_entity:
+          name: Shopping List Entity
+          description: Select your to-do entity.
+          selector:
+            entity:
+              filter:
+                - domain: todo
+        default_fallback_media_player:
+          name: Fallback Speaker
+          description: The speaker to use if no satellite location is detected.
+          selector:
+            entity:
+              filter:
+                - domain: media_player
+
+    # --- Collapsible Voice Phrases Section with Syntax Guide ---
+    voice_command_options:
+      name: Voice Phrases
+      icon: mdi:account-voice
+      collapsed: false
+      description: >
+        Custom voice sentences that will trigger shopping list.
+
+        <br>
+
+        <details>
+          <summary><b>ℹ️ Click to view the Voice Command Syntax Guide</b></summary>
+          <br>
+          When editing the phrases below, use these rules to tweak your phrases:
+          
+          * <b>[Square Brackets]</b> = Optional words. Matches with or without them.
+            * *Example:* `[what is] on the list` matches both "on the list" and "what is on the list".
+            
+          * <b>(Pipes | inside | parentheses)</b> = Alternative words (OR). Matches any single phrase.
+            * *Example:* `(read me|tell me)` matches "read me..." or "give me...".
+        </details>
+      input:
+        shopping_sentence_1:
+          name: Shopping List Command 
+          description: The primary phrase to ask for the list.
+          default: "[what is on] [my] shopping list"
+          selector:
+            text:
+        shopping_sentence_2:
+          name: Secondary Shopping List Command 
+          description: The secondary phrase to ask for the list.
+          default: "(read me|tell me) [what is on] [my] shopping list"
+          selector:
+            text:
+
+    # --- Collapsible Script Customization with Word Replacement Guide ---
+    speech_profile_options:
+      name: Shopping List Speech
+      icon: mdi:chat
+      collapsed: true
+      description: >
+        Adjust exactly how your smart assistant reads out the list items.
+
+        <br>
+
+        <details>
+          <summary><b>ℹ️ Word Replacement Guide</b></summary>
+          <br>
+          You can type these exact tags into your text template underneath, and Home Assistant will swap them with live data:
+          
+          * <b>{items}</b> = The dynamically formatted list of items (e.g., "apples, milk, and bread").
+          * <b>{count}</b> = The total number of items currently on your list.
+        </details>
+      input:
+        shopping_text_template:
+          name: Spoken Text Template
+          description: Edit the script. Use the curly bracket placeholder tags defined in the guide above.
+          default: >-
+            You have {count} items on your shopping list. You need {items}.
+          selector:
+            text:
+              multiline: true
+        empty_list_text:
+          name: Empty List Phrase
+          description: What the assistant says if there is nothing on your shopping list.
+          default: "Your shopping list is completely empty right now."
+          selector:
+            text:
+
+mode: single
+
+trigger:
+  - trigger: conversation
+    command:
+      - !input shopping_sentence_1
+      - !input shopping_sentence_2
+
+condition: []
+
+action:
+  # Fetch all uncompleted items from the target Google Keep list
+  - action: todo.get_items
+    target:
+      entity_id: !input todo_entity
+    data:
+      status: needs_action
+    response_variable: list_output
+
+  - variables:
+      todo_entity_var: !input todo_entity
+      fallback_player: !input default_fallback_media_player
+      raw_text_template: !input shopping_text_template
+      empty_phrase: !input empty_list_text
+      
+      # FIX: Swapped .items to ['items'] so Jinja stops mistaking the key payload for a native dict method
+      raw_items: "{{ list_output[todo_entity_var]['items'] | map(attribute='summary') | list }}"
+      item_count: "{{ raw_items | length }}"
+
+      # Formats array into a natural sentence string: "apples, milk, and bananas"
+      formatted_items: >-
+        {% if item_count > 1 %}
+          {{ raw_items[:-1] | join(', ') }} and {{ raw_items[-1] }}
+        {% elif item_count == 1 %}
+          {{ raw_items[0] }}
+        {% else %}
+          none
+        {% endif %}
+
+      # Pick the layout profile depending on whether the array is populated
+      final_speech: >-
+        {% if item_count > 0 %}
+          {{ raw_text_template 
+            | replace('{count}', item_count)
+            | replace('{items}', formatted_items) }}
+        {% else %}
+          {{ empty_phrase }}
+        {% endif %}
+
+      # Room-aware routing: grab the media player associated with the satellite device that fired the trigger
+      target_media_player: >-
+        {% set dev_id = trigger.device_id | default('', true) %}
+        {% if dev_id != '' %}
+          {% set entities = device_entities(dev_id) %}
+          {{ entities | select('match', '^media_player\\.') | first | default(fallback_player) }}
+        {% else %}
+          {{ fallback_player }}
+        {% endif %}
+
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: "{{ target_media_player }}"
+      message: "{{ final_speech }}"
+      options:
+        voice: Bella
+  - set_conversation_response: ""
