@@ -1,13 +1,12 @@
 blueprint:
-  name: Music Assistant Voice Control using Sendspin Speakers
+  name: Music Assistant Voice Control using MA Speakers
   author: Lonebaggie
   homeassistant:
     min_version: 2024.6.0
   description: >
     ### 🗣️ Voice Control for Music Assistant
     
-    Route voice commands directly from voice satellite to send spin speaker
-    to music assistant.
+    Control Music assistanat via Voice. 
     Supports playing by artist, album, track, playlist, or radio station, with full 
     support for shuffle, stop, and volume. 
   
