@@ -172,7 +172,7 @@
         // Bootstrapping phase: Read configuration data structure first
         async function bootstrapApplication() {
             try {
-                const response = await fetch('radio.json');
+                const response = await fetch('radio_config.json');
                 if (!response.ok) throw new Error(`HTTP Error ${response.status}: Failed to read radio.json`);
                 
                 FULL_CONFIG = await response.json();
