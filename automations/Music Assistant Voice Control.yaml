@@ -46,7 +46,7 @@ blueprint:
 
     # --- Collapsible Ava Device Mapping Section ---
     satellite_mapping_options:
-      name: Ava Satellite Mappings
+      name: Voice Satellite Mappings
       icon: mdi:speaker-multiple
       description: Link your voice satellite device ID to your target Sendspin media players.
       collapsed: false
@@ -54,8 +54,8 @@ blueprint:
         satellite_map:
           name: Device ID-to-Speaker Mapping
           description: |
-            Links an voice satellite Device ID to Sendspin speaker. 
-            Go to Settings -> Devices & Services -> ESPHome > device (device Id in URL).
+            Links the voice satellite Device ID to MA speaker. 
+            To find device ID Go to Settings -> Devices & Services -> ESPHome > device (device ID in URL).
             
             Example format:
             ```yaml
