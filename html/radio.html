@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Radio Controller</title>
+    <style>
+        :root {
+            --bg-color: #0f0f11;
+            --card-color: #16161a;
+            --text-color: #f1f5f9;
+            --accent-color: #38bdf8;
+            --border-color: #27272a;
+            --sub-text: #a1a1aa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            overflow-y: auto; /* Keeps things scrollable if viewed on tiny screens */
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        h1 { font-size: 2.3rem; font-weight: 800; }
+
+        .radio-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            flex-grow: 1;
+            padding-bottom: 20px;
+        }
+
+        .radio-btn {
+            background-color: var(--card-color);
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            touch-action: manipulation;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        /* Inverts dark-themed logos cleanly */
+        .station-logo {
+            max-width: 80%;
+            max-height: 55px;
+            object-fit: contain;
+            filter: invert(1) brightness(0.9);
+            transition: filter 0.15s ease, transform 0.15s ease;
+        }
+
+        .radio-btn.active {
+            border-color: var(--accent-color);
+            background: linear-gradient(145deg, #1e293b, #16161a);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+        }
+
+        /* Pops the color back in when active */
+        .radio-btn.active .station-logo {
+            filter: none;
+            transform: scale(1.05);
+        }
+
+        .indicator {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #27272a;
+            border: 1px solid #3f3f46;
+        }
+
+        .radio-btn.active .indicator {
+            background-color: var(--accent-color);
+            box-shadow: 0 0 8px var(--accent-color);
+            border-color: transparent;
+        }
+
+        .token-gate {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 15, 17, 0.98);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 9999;
+        }
+
+        .gate-box {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .gate-box h2 { font-size: 1.8rem; margin-bottom: 12px; }
+        .gate-box p { color: var(--sub-text); margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- Token validation gate overlay screen -->
+    <div id="setup-gate" class="token-gate">
+        <div class="gate-box">
+            <h2>🔒 Initializing Radio Controller</h2>
+            <p id="gate-msg">Reading local configurations...</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>📻 Radio Controller</h1>
+        </header>
+
+        <!-- Back to the Core 6 BBC Stations -->
+        <div class="radio-grid" id="grid-container">
+            <div class="radio-btn" data-id="switch.radio1">
+                <div class="indicator"></div>
+                <img class="station-logo" src="/local/bbc_radio_1.svg" alt="BBC Radio 1">
+            </div>
+            <div class="radio-btn" data-id="switch.radio2">
+                <div class="indicator"></div>
+                <img class="station-logo" src="/local/bbc_radio_2.svg" alt="BBC Radio 2">
+            </div>
+            <div class="radio-btn" data-id="switch.radio3">
+                <div class="indicator"></div>
+                <img class="station-logo" src="/local/bbc_radio_3.svg" alt="BBC Radio 3">
+            </div>
+            <div class="radio-btn" data-id="switch.radio4">
+                <div class="indicator"></div>
+                <img class="station-logo" src="/local/bbc_radio_4.svg" alt="BBC Radio 4">
+            </div>
+            <div class="radio-btn" data-id="switch.radio5">
+                <div class="indicator"></div>
+                <img class="station-logo" src="/local/bbc_radio_5.svg" alt="BBC Radio 5 Live">
+            </div>
+            <div class="radio-btn" data-id="switch.radio6">
+                <div class="indicator"></div>
+                <img class="station-logo" src="/local/bbc_radio_6.svg" alt="BBC Radio 6 Music">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const HA_URL = window.location.origin; 
+        
+        // Reverted array back to the original 6 switch entities
+        const SWITCHES = [
+            "switch.radio1", 
+            "switch.radio2", 
+            "switch.radio3", 
+            "switch.radio4", 
+            "switch.radio5", 
+            "switch.radio6"
+        ];
+        
+        let ACCESS_TOKEN = localStorage.getItem('ha_secure_token');
+        let messageId = 10; 
+
+        const setupGate = document.getElementById('setup-gate');
+        const gateMsg = document.getElementById('gate-msg');
+        const radioButtons = document.querySelectorAll('.radio-btn');
+
+        // Automatic long-lived token ingestion
+        async function checkAndVerifyToken() {
+            if (ACCESS_TOKEN) {
+                setupGate.style.display = 'none';
+                initRadioController();
+                return;
+            }
+
+            gateMsg.innerText = "Checking file system for token.txt entry...";
+            try {
+                const response = await fetch('token.txt');
+                if (!response.ok) throw new Error("File not found");
+                
+                const fileText = await response.text();
+                const cleanToken = fileText.trim();
+                
+                if (cleanToken.length > 10) {
+                    localStorage.setItem('ha_secure_token', cleanToken);
+                    ACCESS_TOKEN = cleanToken;
+                    
+                    gateMsg.innerText = "Token verified! Loading interface...";
+                    setTimeout(() => {
+                        setupGate.style.display = 'none';
+                        initRadioController();
+                    }, 800);
+                } else {
+                    gateMsg.innerHTML = `<span style="color:#ef4444">Error: token.txt is empty!</span>`;
+                }
+            } catch (err) {
+                gateMsg.innerHTML = `<span style="color:#ef4444">Config Missing!<br>Please drop your token string inside /www/token.txt</span>`;
+            }
+        }
+
+        // Live WebSocket pipeline to Home Assistant
+        function initRadioController() {
+            const wsUrl = HA_URL.replace(/^http/, 'ws') + '/api/websocket';
+            const socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                socket.send(JSON.stringify({ type: "auth", access_token: ACCESS_TOKEN }));
+            };
+
+            socket.onmessage = (event) => {
+                const response = JSON.parse(event.data);
+
+                if (response.type === "auth_invalid") {
+                    localStorage.removeItem('ha_secure_token');
+                    window.location.reload();
+                }
+
+                if (response.type === "auth_ok") {
+                    socket.send(JSON.stringify({ id: 1, type: "subscribe_events", event_type: "state_changed" }));
+                    socket.send(JSON.stringify({ id: 2, type: "get_states" }));
+                }
+
+                if (response.id === 2 && response.type === "result") {
+                    response.result.forEach(state => {
+                        if (SWITCHES.includes(state.entity_id)) {
+                            updateButtonUI(state.entity_id, state.state);
+                        }
+                    });
+                }
+
+                if (response.type === "event" && response.id === 1) {
+                    const eventData = response.event.data;
+                    if (SWITCHES.includes(eventData.entity_id)) {
+                        const targetState = eventData.new_state ? eventData.new_state.state : "off";
+                        updateButtonUI(eventData.entity_id, targetState);
+                    }
+                }
+            };
+
+            function handleStationPress(btn) {
+                const entityId = btn.getAttribute('data-id');
+                const isCurrentlyActive = btn.classList.contains('active');
+                
+                socket.send(JSON.stringify({
+                    id: messageId++, 
+                    type: "call_service",
+                    domain: "switch",
+                    service: isCurrentlyActive ? "turn_off" : "turn_on",
+                    service_data: { entity_id: entityId }
+                }));
+            }
+
+            radioButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (e.button === 0 || e.button === undefined) {
+                        handleStationPress(btn);
+                    }
+                });
+            });
+        }
+
+        function updateButtonUI(entityId, state) {
+            const btn = document.querySelector(`.radio-btn[data-id="${entityId}"]`);
+            if (!btn) return;
+            if (state === "on") {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+
+        checkAndVerifyToken();
+    </script>
+</body>
+</html>
