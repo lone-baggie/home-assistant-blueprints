@@ -1,0 +1,336 @@
+blueprint:
+  name: Music Assistant Voice Control via Ava Satellite ID 
+  author: Lonebaggie
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🗣️ Voice Control for Music Assistant (Ava Native ID Edition)
+    
+    Route voice commands directly from an AVA (ESPHome protocol) Android satellite 
+    to music assistant.
+    Supports playing by artist, album, track, playlist, or radio station, with full 
+    support for shuffle, stop, and volume. 
+    
+    Please ensure you turn off the local media player and enable Sendspin player in AVA settings.
+    <br>
+    
+    <details>
+      <summary><b>ℹ️ Click to view Voice Command Syntax Guide</b></summary>
+      <br>
+      When adjusting the phrases below, use these wildcards to fine-tune your commands:
+      
+      * <b>[Square Brackets]</b> = Optional text. The sentence triggers with or without these words.
+        * <i>Example:</i> <code>[the]</code> matches both "play album" and "play the album".
+        
+      * <b>(Parentheses | with | pipes)</b> = Alternation (OR). Matches any single phrase listed.
+        * <i>Example:</i> <code>(play|listen to)</code> matches "play..." or "listen to...".
+        
+      * <b>{Curly Braces}</b> = Wildcard slots. These extract the text to pass to Music Assistant.
+        * <i>Warning:</i> Do not change the text inside these braces (<code>{artist}</code>, <code>{album}</code>, <code>{track}</code>, <code>{playlist}</code>, <code>{radio}</code>).
+        
+      * <b>Nested Brackets</b> = Extra layers of options. <code>[by {artist}]</code> means the artist name is completely optional.
+    </details>
+  domain: automation
+  input:
+    # --- Default Target Selection Section ---
+    default_speaker_options:
+      name: Default Speaker
+      icon: mdi:speaker
+      collapsed: false
+      input:
+        default_speaker:
+          name: Speaker
+          description: The fallback mediaplayer  to use if using Web Assist
+          selector:
+            entity:
+              filter:
+                - domain: media_player
+
+    # --- Collapsible Ava Device Mapping Section ---
+    satellite_mapping_options:
+      name: Ava Satellite Mappings
+      icon: mdi:speaker-multiple
+      description: Link your AVA Device IDs directly to your target Sendspin media players.
+      collapsed: false
+      input:
+        satellite_map:
+          name: Device ID-to-Speaker Mapping
+          description: |
+            Links an AVA satellite Device ID to Sendspin speaker. 
+            Go to Settings -> Devices & Services -> ESPHome > AVA  to find device Id (in URL).
+            
+            Example format:
+            ```yaml
+            8039e145c2a1df0fbc43491b: media_player.kitchen_speaker
+            9140f256d3b2e00fca54502c: media_player.living_room_ma
+            ```
+          default:
+            8039e145c2a1df0fbc43491b: media_player.kitchen_speaker
+          selector:
+            object: {}
+
+    # --- Collapsible Artist Section ---
+    artist_options:
+      name: Artist Voice Commands
+      icon: mdi:account-music
+      description: Custom phrases for managing artist selection and playback.
+      collapsed: true
+      input:
+        artist_sentence_1:
+          name: Play Artist Phrase
+          default: "(play|listen to|put on|stream) [the ](artist|band|group|musician) {artist}"
+          selector:
+            text:
+        artist_sentence_2:
+          name: Shuffle Artist Phrase
+          default: "(shuffle|randomise) [the ](artist|band|group|musician) {artist}"
+          selector:
+            text:
+
+    # --- Collapsible Track / Song Section ---
+    track_options:
+      name: Song Voice Commands
+      icon: mdi:music-note
+      description: Custom phrases for playing specific songs or tracks.
+      collapsed: true
+      input:
+        track_sentence_1:
+          name: Play Song Phrase
+          default: "(play|listen to|put on|stream) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}]"
+          selector:
+            text:
+        track_sentence_2:
+          name: Shuffle Song Phrase
+          default: "(shuffle|randomise) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}]"
+          selector:
+            text:
+
+    # --- Collapsible Playlist Section ---
+    playlist_options:
+      name: Playlist Voice Commands
+      icon: mdi:playlist-music
+      description: Custom phrases for managing playlist selection and playback.
+      collapsed: true
+      input:
+        playlist_sentence_1:
+          name: Play Playlist Phrase
+          default: "(play|listen to|put on|stream) [the ](playlist) {playlist}"
+          selector:
+            text:
+        playlist_sentence_2:
+          name: Shuffle Playlist Phrase
+          default: "(shuffle|randomise) [the ](playlist) {playlist}"
+          selector:
+            text:
+
+    # --- Collapsible Album Section ---
+    album_options:
+      name: Album Voice Commands
+      icon: mdi:album
+      description: Custom phrases for managing album selection and playback.
+      collapsed: true
+      input:
+        album_sentence_1:
+          name: Play Album Phrase
+          default: "(play|listen to|put on|stream) [the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}]"
+          selector:
+            text:
+        album_sentence_2:
+          name: Shuffle Album Phrase
+          default: "(shuffle|randomise)[the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}]"
+          selector:
+            text:
+
+    # --- Collapsible Radio Section ---
+    radio_options:
+      name: Radio Voice Commands
+      icon: mdi:radio
+      description: Custom phrases for tuning into radio stations.
+      collapsed: true
+      input:
+        radio_sentence:
+          name: Play Radio Phrase
+          default: "(play|listen to|put on|turn on|stream) [the ](radio|BBC|station|radio station) {radio}"
+          selector:
+            text:
+
+    # --- Collapsible Audio Controls Section ---
+    audio_controls:
+      name: System Controls (Playback, Volume & Stop)
+      icon: mdi:volume-high
+      description: Custom phrases for managing volume, tracking skipping, and halting playback.
+      collapsed: true
+      input:
+        next_sentence:
+          name: Next Track Phrase
+          default: "(next track|next song|skip|skip track|skip song)"
+          selector:
+            text:
+        previous_sentence:
+          name: Previous Track Phrase
+          default: "(previous track|previous song|back|go back)"
+          selector:
+            text:
+        volume_up_sentence:
+          name: Volume Up Phrase
+          default: "(volume up|louder|turn it up|crank it up|raise the volume|increase volume)"
+          selector:
+            text:
+        volume_down_sentence:
+          name: Volume Down Phrase
+          default: "(volume down|quieter|turn it down|lower the volume|decrease volume)"
+          selector:
+            text:
+        stop_sentence:
+          name: Stop Music Phrase
+          default: "(stop|cancel|pause|hush|shut up) [the ][music|audio|radio|playback]"
+          selector:
+            text:
+
+mode: single
+
+trigger:
+  - trigger: conversation
+    command:
+      - !input artist_sentence_1
+      - !input artist_sentence_2
+    id: artist
+  - trigger: conversation
+    command:
+      - !input track_sentence_1
+      - !input track_sentence_2
+    id: track
+  - trigger: conversation
+    command:
+      - !input playlist_sentence_1
+      - !input playlist_sentence_2
+    id: playlist
+  - trigger: conversation
+    command:
+      - !input album_sentence_1
+      - !input album_sentence_2
+    id: album
+  - trigger: conversation
+    command:
+      - !input radio_sentence
+    id: radio
+  - trigger: conversation
+    command:
+      - !input next_sentence
+    id: media_next
+  - trigger: conversation
+    command:
+      - !input previous_sentence
+    id: media_previous
+  - trigger: conversation
+    command:
+      - !input volume_up_sentence
+    id: volume_up
+  - trigger: conversation
+    command:
+      - !input volume_down_sentence
+    id: volume_down
+  - trigger: conversation
+    command:
+      - !input stop_sentence
+    id: media_stop
+
+condition: []
+
+action:
+  - variables:
+      satellite_map: !input satellite_map
+      default_target: !input default_speaker
+
+      answering_satellite_id: "{{ trigger.device_id | default('', true) }}"
+
+      speaker: >-
+        {% if answering_satellite_id != '' and satellite_map.get(answering_satellite_id) is defined %}
+          {{ satellite_map.get(answering_satellite_id) }}
+        {% else %}
+          {{ default_target }}
+        {% endif %}
+
+      radio: "{{ trigger.slots.radio | default('') }}"
+      artist: "{{ trigger.slots.artist | default('') }}"
+      album: "{{ trigger.slots.album | default('') }}"
+      playlist: "{{ trigger.slots.playlist | default('') }}"
+      track: "{{ trigger.slots.track | default('') }}"
+
+      media_type: "{{ trigger.id.split('_') | first }}"
+      
+      # Transport action assignment
+      action: >-
+        {% if trigger.id == 'media_stop' %}
+          media_player.media_stop
+        {% elif trigger.id == 'media_next' %}
+          media_player.media_next_track
+        {% elif trigger.id == 'media_previous' %}
+          media_player.media_previous_track
+        {% else %}
+          media_player.{{ media_type }}
+        {% endif %}
+
+      media_id: "{{ radio }} {{ artist }} {{ album }} {{ playlist }} {{ track }}"
+      shuffle: >-
+        {{ 'shuffle' in trigger.sentence | lower or 'random' in trigger.sentence | lower }}
+
+      # Math section for calculated volume stepping
+      current_volume: "{{ state_attr(speaker, 'volume_level') | float(0.3) }}"
+      target_volume: >-
+        {% if trigger.id == 'volume_up' %}
+          {{ ([current_volume + 0.05, 1.0] | min) | round(2) }}
+        {% elif trigger.id == 'volume_down' %}
+          {{ ([current_volume - 0.05, 0.0] | max) | round(2) }}
+        {% else %}
+          {{ current_volume }}
+        {% endif %}
+
+  # Clear raw tracking flags
+  - action: media_player.shuffle_set
+    target:
+      entity_id: "{{ speaker }}"
+    data:
+      shuffle: false
+
+  - choose:
+      # Branch 1: Unified calculated volume tracking (Fixed Action call)
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['volume_up', 'volume_down'] }}"
+        sequence:
+          - action: media_player.volume_set
+            target:
+              entity_id: "{{ speaker }}"
+            data:
+              volume_level: "{{ target_volume }}"
+
+      # Branch 2: Standard Transport Controls (Stop, Skip, Prev)
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['media_stop', 'media_next', 'media_previous'] }}"
+        sequence:
+          - action: "{{ action }}"
+            target:
+              entity_id: "{{ speaker }}"
+            data: {}
+
+      # Branch 3: Music Assistant query routing
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['artist', 'track', 'album', 'radio', 'playlist'] }}"
+        sequence:
+          - action: media_player.shuffle_set
+            target:
+              entity_id: "{{ speaker }}"
+            data:
+              shuffle: "{{ shuffle }}"
+          - action: music_assistant.play_media
+            target:
+              entity_id: "{{ speaker }}"
+            data:
+              media_id: "{{ media_id | trim }}"
+              artist: "{{ artist }}"
+              album: "{{ album }}"
+              enqueue: play
+              media_type: "{{ media_type }}"
