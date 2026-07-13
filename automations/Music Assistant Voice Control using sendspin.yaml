@@ -1,17 +1,16 @@
 blueprint:
-  name: Music Assistant Voice Control via Ava Satellite ID 
+  name: Music Assistant Voice Control using Sendspin Speakers
   author: Lonebaggie
   homeassistant:
     min_version: 2024.6.0
   description: >
-    ### 🗣️ Voice Control for Music Assistant (Ava Native ID Edition)
+    ### 🗣️ Voice Control for Music Assistant
     
-    Route voice commands directly from an AVA (ESPHome protocol) Android satellite 
+    Route voice commands directly from voice satellite to send spin speaker
     to music assistant.
     Supports playing by artist, album, track, playlist, or radio station, with full 
     support for shuffle, stop, and volume. 
-    
-    Please ensure you turn off the local media player and enable Sendspin player in AVA settings.
+  
     <br>
     
     <details>
@@ -40,7 +39,7 @@ blueprint:
       input:
         default_speaker:
           name: Speaker
-          description: The fallback mediaplayer  to use if using Web Assist
+          description: The fallback media player to use if using Web Assist
           selector:
             entity:
               filter:
@@ -50,14 +49,14 @@ blueprint:
     satellite_mapping_options:
       name: Ava Satellite Mappings
       icon: mdi:speaker-multiple
-      description: Link your AVA Device IDs directly to your target Sendspin media players.
+      description: Link your voice satellite device ID to your target Sendspin media players.
       collapsed: false
       input:
         satellite_map:
           name: Device ID-to-Speaker Mapping
           description: |
-            Links an AVA satellite Device ID to Sendspin speaker. 
-            Go to Settings -> Devices & Services -> ESPHome > AVA  to find device Id (in URL).
+            Links an voice satellite Device ID to Sendspin speaker. 
+            Go to Settings -> Devices & Services -> ESPHome > device (device Id in URL).
             
             Example format:
             ```yaml
