@@ -1,1 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Production Mechanical Flip Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050507;
+            --chassis-bg: #09090c;       
+            --tile-bg: #22222b;          
+            --tile-text: #ffffff;
+            --hinge-gap-color: #000000;  
+            --tile-edge-color: #444454;  
+            --shadow-color: rgba(0, 0, 0, 0.95);
+            --anim-duration: 0.7s; 
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        html, body {
+            background-color: var(--bg-color);
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            font-family: 'Oswald', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Full Screen Kiosk Frame --- */
+        .kiosk-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #1a1a2a 0%, var(--bg-color) 85%);
+            padding: 2vw 9vw 2vw 2vw; 
+        }
+
+        /* --- Main Chassis Board --- */
+        .flip-clock-board {
+            display: flex;
+            align-items: center;
+            gap: 3.5vw;
+            padding: 4.5vw;
+            background-color: var(--chassis-bg);
+            border: 0.6vw solid #14141a;
+            border-radius: 4vw;
+            box-shadow: 
+                inset 0 1.5vw 3.5vw rgba(0,0,0,0.95),
+                0 4vw 10vw -2vw rgba(0,0,0,0.95);
+            position: relative;
+            max-width: 96vw;
+        }
+
+        .card-group {
+            display: flex;
+            gap: 2vw;
+            position: relative;
+        }
+
+        /* Center Colon */
+        .colon-separator {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4vw;
+            height: 30vw;
+            animation: blinker 1s step-start infinite;
+        }
+
+        .colon-dot {
+            width: 2.5vw;
+            height: 2.5vw;
+            background-color: var(--tile-text);
+            border-radius: 50%;
+            box-shadow: 0 0.5vw 1vw rgba(0,0,0,0.8);
+            opacity: 0.85;
+        }
+
+        @keyframes blinker {
+            50% { opacity: 0.15; }
+        }
+
+        /* --- 3D Card Frame --- */
+        .flip-card {
+            position: relative;
+            width: 20vw; 
+            height: 32.35vw; 
+            font-size: 26vw; 
+            font-weight: 700; 
+            text-align: center;
+            perspective: 2000px; 
+            filter: drop-shadow(0 1.5vw 2vw rgba(0, 0, 0, 0.85));
+        }
+
+        /* --- Independent Symmetrical Tiles --- */
+        .card-half {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 16vw; 
+            overflow: hidden;
+            background-color: var(--tile-bg);
+            color: var(--tile-text);
+            border: 0.35vw solid var(--tile-edge-color);
+        }
+
+        .card-half span, .flipper-face span {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 32vw; 
+            line-height: 32vw;
+            text-align: center;
+            display: block;
+            margin-top: -1.2vw;
+        }
+
+        /* Top Tile - Symmetrical curves matching the bottom plate layout */
+        .card-top {
+            top: 0;
+            border-radius: 2vw 2vw 0.5vw 0.5vw;
+            box-shadow: inset 0 1vw 1.5vw rgba(255,255,255,0.12), inset 0 0 2vw rgba(0,0,0,0.6);
+            z-index: 1;
+        }
+        .card-top span { top: 0; }
+
+        /* Bottom Tile - Mirrored to achieve a unified vertical split */
+        .card-bottom {
+            bottom: 0;
+            border-radius: 0.5vw 0.5vw 2vw 2vw;
+            box-shadow: inset 0 1vw 2vw rgba(0,0,0,0.7), inset 0 -0.5vw 1vw rgba(255,255,255,0.06);
+            z-index: 1;
+        }
+        .card-bottom span { top: -16vw; } 
+
+        /* --- THE ANIMATED SYSTEM FLIPPER --- */
+        .flipper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 16vw;
+            transform-style: preserve-3d;
+            transform-origin: bottom center;
+            animation-duration: var(--anim-duration);
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            animation-fill-mode: forwards;
+            z-index: 5;
+        }
+
+        .flipper-face {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--tile-bg);
+            color: var(--tile-text);
+            backface-visibility: hidden;
+            border: 0.35vw solid var(--tile-edge-color);
+        }
+
+        .flipper-front {
+            border-radius: 2vw 2vw 0.5vw 0.5vw;
+            box-shadow: inset 0 1vw 1.5vw rgba(255,255,255,0.12), inset 0 0 2vw rgba(0,0,0,0.6);
+            z-index: 2;
+        }
+        .flipper-front span { top: 0; }
+
+        .flipper-back {
+            border-radius: 0.5vw 0.5vw 2vw 2vw;
+            box-shadow: inset 0vw 1vw 2vw rgba(0,0,0,0.7);
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+        .flipper-back span { top: -16vw; }
+
+        @keyframes flipMain {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(-180deg); }
+        }
+
+        .animate-rotation { animation-name: flipMain; }
+    </style>
+</head>
+<body>
+
+    <div class="kiosk-container">
+        <div class="flip-clock-board">
+            
+            <!-- Hours Column -->
+            <div class="card-group">
+                <div class="flip-card" id="h1">
+                    <div class="card-half card-top"><span>0</span></div>
+                    <div class="card-half card-bottom"><span>0</span></div>
+                </div>
+                <div class="flip-card" id="h2">
+                    <div class="card-half card-top"><span>0</span></div>
+                    <div class="card-half card-bottom"><span>0</span></div>
+                </div>
+            </div>
+
+            <!-- Flashing Colon Separator -->
+            <div class="colon-separator">
+                <div class="colon-dot"></div>
+                <div class="colon-dot"></div>
+            </div>
+
+            <!-- Minutes Column -->
+            <div class="card-group">
+                <div class="flip-card" id="m1">
+                    <div class="card-half card-top"><span>0</span></div>
+                    <div class="card-half card-bottom"><span>0</span></div>
+                </div>
+                <div class="flip-card" id="m2">
+                    <div class="card-half card-top"><span>0</span></div>
+                    <div class="card-half card-bottom"><span>0</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const cardStates = {
+            h1: { current: null },
+            h2: { current: null },
+            m1: { current: null },
+            m2: { current: null }
+        };
+
+        function initCard(cardId) {
+            cardStates[cardId].el = document.getElementById(cardId);
+        }
+
+        function flipCardToValue(cardId, nextValue) {
+            const state = cardStates[cardId];
+            const currentValue = state.current;
+
+            if (currentValue === nextValue) return;
+
+            if (currentValue === null) {
+                state.el.querySelector('.card-top span').textContent = nextValue;
+                state.el.querySelector('.card-bottom span').textContent = nextValue;
+                state.current = nextValue;
+                return;
+            }
+
+            state.current = nextValue;
+            const el = state.el;
+
+            const remnants = el.querySelectorAll('.flipper');
+            remnants.forEach(r => r.remove());
+
+            el.querySelector('.card-top span').textContent = nextValue;
+            el.querySelector('.card-bottom span').textContent = currentValue;
+
+            const flipper = document.createElement('div');
+            flipper.className = 'flipper animate-rotation';
+            flipper.innerHTML = `
+                <div class="flipper-face flipper-front"><span>${currentValue}</span></div>
+                <div class="flipper-face flipper-back"><span>${nextValue}</span></div>
+            `;
+
+            el.appendChild(flipper);
+
+            flipper.addEventListener('animationend', () => {
+                el.querySelector('.card-bottom span').textContent = nextValue;
+                flipper.remove();
+            });
+        }
+
+        function clockEngine() {
+            const now = new Date();
+            
+            const hoursStr = String(now.getHours()).padStart(2, '0');
+            const minutesStr = String(now.getMinutes()).padStart(2, '0');
+
+            flipCardToValue('h1', hoursStr[0]);
+            flipCardToValue('h2', hoursStr[1]);
+            flipCardToValue('m1', minutesStr[0]);
+            flipCardToValue('m2', minutesStr[1]);
+        }
+
+        initCard('h1');
+        initCard('h2');
+        initCard('m1');
+        initCard('m2');
+
+        clockEngine();
+        setInterval(clockEngine, 500);
+    </script>
+</body>
+</html>
