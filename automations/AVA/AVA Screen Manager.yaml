@@ -1,0 +1,122 @@
+blueprint:
+  name: "AVA Screen Manager" 
+  author: "Lone baggie"
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+     ###  AVA controls web brower screen and Screen saver timeouts.
+     
+     
+         
+  domain: automation
+  input:
+    portal_switches:
+      name: "Portal Browser Switches"
+      description: "Select your portal browser display switches."
+      selector:
+        entity:
+          integration: esphome 
+          domain: switch
+          multiple: true
+    idle_seconds:
+      name: "Idle Delay (Seconds)"
+      description: "How long the browser display switch must stay 'on' ."
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+          mode: box
+    overwrite:
+       name: Overwrite Mediaplayer
+       description: Do you want to overwrite vinyl cover with screensaver ?
+       default: false
+       selector:
+         boolean:
+
+
+
+# Run instances in parallel so multiple portals going idle simultaneously don't block each other
+mode: parallel
+max: 10
+
+trigger:
+  - platform: state
+    id: delay
+    entity_id: !input portal_switches
+    to: "on"
+    for:
+      hours: 0
+      minutes: 0
+      seconds: !input idle_seconds
+  - platform: state
+    id: no_delay
+    entity_id: !input portal_switches
+    to: "on"
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0     
+
+
+condition: []
+
+action:
+  # --- UI MISCONFIGURATION GUARD RAIL ---
+  # If a user accidentally selects a non-portal switch, this stops execution instantly
+  - condition: template
+    value_template: "{{ trigger.entity_id is match('^switch\\.portal.*_browser_display$') }}"
+  
+
+  # Extract our environment variables cleanly right up front based on the native trigger context
+  - variables:
+      switch_br: "{{ trigger.entity_id }}"
+      device: "{{ switch_br | replace('switch.', '') | replace('_browser_display', '') }}"
+      switch_ss: "switch.{{ device }}_screensaver_display"
+      text_br: "text.{{ device }}_browser_url"
+      media_player: "media_player.{{ device }}"
+
+      overwrite: !input overwrite
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - delay
+        sequence:
+
+          - if:
+              - condition: template
+                value_template: "{{ is_state(media_player, 'playing') and not overwrite }}"
+            then:
+              - action: text.set_value
+                target:
+                  entity_id: "{{ text_br }}"
+                data:
+                  value: ""
+              - action: switch.turn_off
+                target:
+                  entity_id: "{{ switch_br }}"
+                data: {}
+            else:
+              - action: text.set_value
+                target:
+                  entity_id: "{{ text_br }}"
+                data:
+                  value: ""
+              - action: switch.turn_off
+                target:
+                  entity_id: "{{ switch_br }}"
+                data: {}
+              - action: switch.turn_on
+                target:
+                  entity_id: "{{ switch_ss }}"
+      - conditions:
+          - condition: trigger
+            id:
+              - no_delay
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: "{{ switch_ss }}"
+            data: {}

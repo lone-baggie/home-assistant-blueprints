@@ -1,0 +1,228 @@
+blueprint:
+  name: "AVA Read Weather forecast"
+  author: "Lone baggie"
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🌤 Weather Report for AVA assistants
+    
+    Creates a natural sounding weather report from weather entity. This blueprint relies on the music assistant
+    media players have the same name as the AVA device. So media_player.xxx must the device name xxx.
+  domain: automation
+  input:
+    # --- Core Hardware Options Group ---
+    core_hardware_options:
+      name: Weather & media entities
+      icon: mdi:devices
+      collapsed: false
+      input:
+        weather_entity:
+          name: Weather Provider
+          description: Select the weather entity.
+          selector:
+            entity:
+              filter:
+                - domain: weather
+        fallback_media_player:
+          name: Fallback Speaker
+          description: The speaker to use if no satellite location is detected.
+          selector:
+            entity:
+              filter:
+                - domain: media_player
+        display:
+          name: Display HTML page on device
+          description: Toggle to display web page on device
+          selector:
+            boolean:
+        html:
+          name: HTML display
+          description: Enter URL of page to display on device. 
+          default: http://192.168.0.254:8123/local/weather.html
+          selector:
+            text:
+
+                
+    # --- Collapsible Voice Phrases Section with Syntax Guide ---
+    voice_command_options:
+      name: Voice Phrases
+      icon: mdi:account-voice
+      collapsed: false
+      description: >
+        Custom voice sentences that will trigger this weather report.
+
+        <br>
+
+        <details>
+          <summary><b>ℹ️ Click to view the Voice Command Syntax Guide</b></summary>
+          <br>
+          When editing the phrases below, use these rules to tweak your phrases:
+          
+          * <b>[Square Brackets]</b> = Optional words. Matches with or without them.
+            * *Example:* `[what is] the weather` matches both "the weather" and "what is the weather".
+            
+          * <b>(Pipes | inside | parentheses)</b> = Alternative words (OR). Matches any single phrase.
+            * *Example:* `(tell me|give me)` matches "tell me..." or "give me...".
+        </details>
+      input:
+        weather_sentence_1:
+          name: Weather Command 
+          description: The primary phrase used to ask for the weather.
+          default: "whats [the] weather [today]"
+          selector:
+            text:
+        weather_sentence_2:
+          name: Secondary Weather Command 
+          description: The secondary phrase to ask for a weather.
+          default: "(give me |tell me |read) [the] weather [forecast]"
+          selector:
+            text:
+
+    # --- Collapsible Weather Wording Map ---
+    weather_mapping_options:
+      name: Weather forecast
+      icon: mdi:weather-partly-rainy
+      collapsed: true
+      description: Swap weather codes for natural-sounding speech.
+      input:
+        custom_state_map:
+          name: Weather Words List
+          description: Change brief description to friendly words spoken by the smart assistant.
+          selector:
+            object: {}
+          default:
+            sunny: "beautifully sunny"
+            partlycloudy: "partly cloudy with some bright spells"
+            cloudy: "rather cloudy"
+            clear-night: "clear and calm"
+            fog: "quite foggy with low visibility"
+            hail: "showering with hail"
+            lightning: "thundery"
+            lightning-rainy: "stormy with heavy rain and lightning"
+            pouring: "absolutely pouring with heavy rain"
+            rainy: "wet and rainy"
+            snowy: "snowy underfoot"
+            snowy-rainy: "a miserable mix of sleet and rain"
+            windy: "blustery and windy"
+            windy-variant: "windy and overcast"
+            exceptional: "highly unusual and severe"
+
+    # --- Collapsible Script Customization with Word Replacement Guide ---
+    speech_profile_options:
+      name: Weather Speech
+      icon: mdi:chat
+      collapsed: true
+      description: >
+        Adjust the exact phrase your smart assistant will say out loud.
+
+        <br>
+
+        <details>
+          <summary><b>ℹ️ Word Replacement Guide</b></summary>
+          <br>
+          You can type these exact tags into your text template underneath, and Home Assistant will swap them with live data:
+          
+          * <b>{location}</b> = The name of your weather area (e.g., Home, Work).
+          * <b>{condition}</b> = Your custom friendly wording for the current weather status.
+          * <b>{high}</b> = Today's highest expected temperature.
+          * <b>{low}</b> = Tonight's lowest expected temperature.
+          * <b>{rain_chance}</b> = The percentage chance of rain.
+        </details>
+      input:
+        weather_text_template:
+          name: Spoken Text Template
+          description: Edit the script. use the curly bracket placeholder tags defined in the guide above.
+          default: >-
+            Today in {location}, the weather is expected to be {condition}. 
+            The high will reach {high} degrees, and tonight it will drop to a low of {low} degrees. 
+            There is a {rain_chance} percent chance of rain.
+          selector:
+            text:
+              multiline: true
+
+mode: single
+
+trigger:
+  - trigger: conversation
+    command:
+      - !input weather_sentence_1
+      - !input weather_sentence_2
+
+condition: []
+
+action:
+  - variables:
+      weather: !input weather_entity
+  - action: weather.get_forecasts
+    target:
+      entity_id: "{{weather}}"
+    data:
+      type: daily
+    response_variable: met_office_output
+  - variables:
+      url: !input html
+      raw_text_template: !input weather_text_template
+      state_map: !input custom_state_map
+      sat: "{{trigger.satellite_id.split('.')}}"
+      default: !input fallback_media_player
+      display: !input display
+      speaker: >
+        {% if sat[1] != "" %}
+          media_player.{{sat[1]}}
+        {% else %}
+          {{default}}
+        {% endif %}
+      switch: switch.{{sat[1]}}_browser_display
+      text: text.{{sat[1]}}_remote_browser_url
+      # Grab the live daily data maps out of the core payload response
+      today: "{{ met_office_output[weather].forecast[0] }}"
+      location_name: "{{ state_attr(weather, 'friendly_name') }}"
+      
+      # Match the raw api state word against our user-customized dictionary map
+      friendly_condition: >-
+        {% set raw_cond = today.condition %}
+        {{ state_map[raw_cond] if raw_cond in state_map else raw_cond | replace('-', ' ') }}
+        
+      # Replace our markup tags inside the script with live data text
+      weather_summary: >-
+        {{ raw_text_template 
+          | replace('{location}', location_name)
+          | replace('{condition}', friendly_condition)
+          | replace('{high}', today.temperature)
+          | replace('{low}', today.templow)
+          | replace('{rain_chance}', today.precipitation_probability) }}
+  - if:
+      - condition: template
+        value_template: "{{display}}"
+    then:
+      - action: text.set_value
+        metadata: {}
+        target:
+          entity_id: "{{text}}"
+        data:
+          value: "{{url}}"
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: "{{switch}}"
+        data: {} 
+  - action: weather.get_forecasts
+    target:
+      entity_id: "{{weather}}"
+    data:
+      type: daily
+    response_variable: met_office_output
+
+          
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: "{{ speaker }}"
+      message: "{{ weather_summary }}"
+      options:
+        voice: Bella
+  - set_conversation_response: ""
+
+
+  
