@@ -1,0 +1,53 @@
+blueprint:
+  author: "Lone baggie"
+  homeassistant:
+    min_version: 2024.6.0
+  name: "AVA Sync Volume Manager"
+  description: "Synchronizes software media player volume levels with physical volume hardware sensors upon playback initialization."
+  domain: automation
+  input:
+    target_media_players:
+      name: "Portal Media Players"
+      description: "Select all the portal media player entities you want to actively manage."
+      selector:
+        entity:
+          integration: music_assistant
+          domain: media_player
+          multiple: true
+
+# Run in parallel so multiple devices starting audio streams simultaneously are processed independently
+mode: parallel
+max: 10
+
+trigger:
+  # Native state trigger tracking state transitions across our entire user-selected array
+  - platform: state
+    entity_id: !input target_media_players
+    to: "playing"
+
+condition: []
+
+action:
+  # --- UI MISCONFIGURATION GUARD RAIL ---
+  # Ensures the entity matches your portal/portalmini naming architecture standard
+  - condition: template
+    value_template: "{{ trigger.entity_id is match('^media_player\\.portal.*$') }}"
+
+  # Linux script style: Map our variables neatly right up front based on the active trigger context
+  - variables:
+      media_player: "{{ trigger.entity_id }}"
+      # Slices out the domain prefix (e.g. 'media_player.portalmini_black' -> 'portalmini_black')
+      device_id: "{{ media_player | replace('media_player.', '') }}"
+      volume_sensor: "sensor.{{ device_id }}_physical_volume"
+      vol: "{{ states(volume_sensor) }}"
+
+  # Guard rail: Make sure the target volume sensor actually exists and returns a valid number
+  - condition: template
+    value_template: "{{ vol not in ['unknown', 'unavailable'] and vol | float(default=-1) >= 0 }}"
+
+  # Match the volume mixer to the physical hardware state
+  - action: media_player.volume_set
+    target:
+      entity_id: "{{ media_player }}"
+    data:
+      volume_level: "{{ vol | float }}"

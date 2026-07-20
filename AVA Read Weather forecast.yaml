@@ -1,0 +1,298 @@
+blueprint:
+  name: "AVA Read Weather forecast"
+  author: "Lone baggie (Expanded & Fixed)"
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🌤 Weather Report & Direct Answers for AVA assistants
+    
+    Creates a natural sounding weather report or answers specific questions like 
+    "Will it rain today?" and "What temperature will it be today?". Relies on music assistant 
+    media players having the same name as the AVA device.
+  domain: automation
+  input:
+    # --- Core Hardware Options Group ---
+    core_hardware_options:
+      name: Weather & media entities
+      icon: mdi:devices
+      collapsed: false
+      input:
+        weather_entity:
+          name: Weather Provider
+          description: Select the weather entity.
+          selector:
+            entity:
+              filter:
+                - domain: weather
+        fallback_media_player:
+          name: Fallback Speaker
+          description: The speaker to use if no satellite location is detected.
+          selector:
+            entity:
+              filter:
+                - domain: media_player
+        display:
+          name: Display HTML page on device
+          description: Toggle to display web page on device
+          selector:
+            boolean:
+          default: false
+        html:
+          name: HTML display
+          description: Enter URL of page to display on device. 
+          default: http://192.168.0.254:8123/local/weather.html
+          selector:
+            text:
+
+    # --- Collapsible Voice Phrases Section with Syntax Guide ---
+    voice_command_options:
+      name: Voice Phrases
+      icon: mdi:account-voice
+      collapsed: false
+      description: >
+        Custom voice sentences that will trigger this weather report or specific answers.
+
+        <br>
+
+        <details>
+          <summary><b>ℹ️ Click to view the Voice Command Syntax Guide</b></summary>
+          <br>
+          When editing the phrases below, use these rules to tweak your phrases:
+          
+          * <b>[Square Brackets]</b> = Optional words. Matches with or without them.
+            * *Example:* `[what is] the weather` matches both "the weather" and "what is the weather".
+            
+          * <b>(Pipes | inside | parentheses)</b> = Alternative words (OR). Matches any single phrase.
+            * *Example:* `(tell me|give me)` matches "tell me..." or "give me...".
+        </details>
+      input:
+        weather_sentence_1:
+          name: Weather Command 
+          description: The primary phrase used to ask for the general weather.
+          default: "whats [the] weather [today]"
+          selector:
+            text:
+        weather_sentence_2:
+          name: Secondary Weather Command 
+          description: The secondary phrase to ask for a weather report.
+          default: "(give me |tell me |read) [the] weather [forecast]"
+          selector:
+            text:
+        rain_sentence:
+          name: Rain Question Command
+          description: Phrase to ask if it will rain today.
+          default: "will it rain [today]"
+          selector:
+            text:
+        temp_sentence:
+          name: Temperature Question Command
+          description: Phrase to ask what temperature it will be.
+          default: "[what] temperature will it be [today]"
+          selector:
+            text:
+
+    # --- Collapsible Weather Wording Map ---
+    weather_mapping_options:
+      name: Weather forecast
+      icon: mdi:weather-partly-rainy
+      collapsed: true
+      description: Swap weather codes for natural-sounding speech.
+      input:
+        custom_state_map:
+          name: Weather Words List
+          description: Change brief description to friendly words spoken by the smart assistant.
+          selector:
+            object: {}
+          default:
+            sunny: "beautifully sunny"
+            partlycloudy: "partly cloudy with some bright spells"
+            cloudy: "rather cloudy"
+            clear-night: "clear and calm"
+            fog: "quite foggy with low visibility"
+            hail: "showering with hail"
+            lightning: "thundery"
+            lightning-rainy: "stormy with heavy rain and lightning"
+            pouring: "absolutely pouring with heavy rain"
+            rainy: "wet and rainy"
+            snowy: "snowy underfoot"
+            snowy-rainy: "a miserable mix of sleet and rain"
+            windy: "blustery and windy"
+            windy-variant: "windy and overcast"
+            exceptional: "highly unusual and severe"
+
+    # --- Collapsible Script Customization with Word Replacement Guide ---
+    speech_profile_options:
+      name: Weather Speech
+      icon: mdi:chat
+      collapsed: true
+      description: >
+        Adjust the exact phrases your smart assistant will say out loud.
+
+        <br>
+
+        <details>
+          <summary><b>ℹ️ Word Replacement Guide</b></summary>
+          <br>
+          You can type these exact tags into your text templates underneath:
+          
+          * <b>{location}</b> = The name of your weather area (e.g., Home, Work).
+          * <b>{condition}</b> = Your custom friendly wording for the current weather status.
+          * <b>{high}</b> = Today's highest expected temperature.
+          * <b>{low}</b> = Tonight's lowest expected temperature.
+          * <b>{rain_chance}</b> = The percentage chance of rain.
+        </details>
+      input:
+        weather_text_template:
+          name: Full Weather Report Template
+          description: Edit the script for a full weather breakdown.
+          default: >-
+            Today in {location}, the weather is expected to be {condition}. 
+            The high will reach {high} degrees, and tonight it will drop to a low of {low} degrees. 
+            There is a {rain_chance} percent chance of rain.
+          selector:
+            text:
+              multiline: true
+        rain_text_template:
+          name: Rain Answer Template
+          description: Spoken text when asked if it will rain.
+          default: "Yes, there is a {rain_chance} percent chance of rain today."
+          selector:
+            text:
+              multiline: true
+        no_rain_text_template:
+          name: No Rain Answer Template
+          description: Spoken text when the rain chance is low or zero.
+          default: "No, it looks dry today with only a {rain_chance} percent chance of rain."
+          selector:
+            text:
+              multiline: true
+        temp_text_template:
+          name: Temperature Answer Template
+          description: Spoken text when asked about today's temperature.
+          default: "Today in {location}, the high will reach {high} degrees with a low of {low} degrees."
+          selector:
+            text:
+              multiline: true
+
+mode: single
+
+trigger:
+  - trigger: conversation
+    command:
+      - !input weather_sentence_1
+      - !input weather_sentence_2
+      - !input rain_sentence
+      - !input temp_sentence
+
+condition: []
+
+action:
+  - variables:
+      weather: !input weather_entity
+  - action: weather.get_forecasts
+    target:
+      entity_id: "{{weather}}"
+    data:
+      type: daily
+    response_variable: met_office_output
+  - variables:
+      url: !input html
+      raw_text_template: !input weather_text_template
+      rain_tpl: !input rain_text_template
+      no_rain_tpl: !input no_rain_text_template
+      temp_tpl: !input temp_text_template
+      state_map: !input custom_state_map
+      sat: "{{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and '.' in trigger.satellite_id else ['', ''] }}"
+      default: !input fallback_media_player
+      display: !input display
+      speaker: >
+        {% if sat | length > 1 and sat[1] != "" %}
+          media_player.{{sat[1]}}
+        {% else %}
+          {{default}}
+        {% endif %}
+      switch: >
+        {% if sat | length > 1 and sat[1] != "" %}
+          switch.{{ sat[1] }}_browser_display
+        {% else %}
+          switch.dummy
+        {% endif %}
+      text: >
+        {% if sat | length > 1 and sat[1] != "" %}
+          text.{{ sat[1] }}_remote_browser_url
+        {% else %}
+          text.dummy
+        {% endif %}
+      
+      # Grab live daily data out of the core payload response
+      today: "{{ met_office_output[weather].forecast[0] }}"
+      location_name: "{{ state_attr(weather, 'friendly_name') }}"
+      
+      # Match the raw api state word against our user-customized dictionary map
+      friendly_condition: >-
+        {% set raw_cond = today.condition %}
+        {{ state_map[raw_cond] if raw_cond in state_map else raw_cond | replace('-', ' ') }}
+        
+      # Extract precipitation probability safely (default to 0 if missing)
+      rain_chance_val: "{{ today.precipitation_probability | default(0, true) | int }}"
+
+      # Figure out which voice command was matched by checking the sentence text
+      matched_sentence: "{{ trigger.sentence }}"
+
+      # Construct individual message variants
+      rain_message: >-
+        {% if rain_chance_val > 20 %}
+          {{ rain_tpl | replace('{rain_chance}', rain_chance_val) }}
+        {% else %}
+          {{ no_rain_tpl | replace('{rain_chance}', rain_chance_val) }}
+        {% endif %}
+
+      temp_message: >-
+        {{ temp_tpl 
+          | replace('{location}', location_name)
+          | replace('{high}', today.temperature)
+          | replace('{low}', today.templow) }}
+
+      full_message: >-
+        {{ raw_text_template 
+          | replace('{location}', location_name)
+          | replace('{condition}', friendly_condition)
+          | replace('{high}', today.temperature)
+          | replace('{low}', today.templow)
+          | replace('{rain_chance}', rain_chance_val) }}
+
+      # Final selector for what the assistant will actually say
+      weather_summary: >-
+        {% if 'rain' in trigger.sentence | lower %}
+          {{ rain_message }}
+        {% elif 'temperature' in trigger.sentence | lower or 'temp' in trigger.sentence | lower %}
+          {{ temp_message }}
+        {% else %}
+          {{ full_message }}
+        {% endif %}
+
+  - if:
+      - condition: template
+        value_template: "{{ display }}"
+    then:
+      - action: text.set_value
+        metadata: {}
+        target:
+          entity_id: "{{ text }}"
+        data:
+          value: "{{ url }}"
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: "{{ switch }}"
+        data: {} 
+
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: "{{ speaker }}"
+      message: "{{ weather_summary }}"
+      options:
+        voice: Bella
+  - set_conversation_response: ""
