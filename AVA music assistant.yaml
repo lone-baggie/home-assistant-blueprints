@@ -1,13 +1,14 @@
 blueprint:
   name: AVA voice for Music Assistant
-  author: Lonebaggie
+  author: Lonebaggie (With Unconfigured Remote Speaker Guard)
   homeassistant:
     min_version: 2024.6.0
   description: >
     ### 🗣 AVA Voice Control for Music Assistant
     
-    # Control music assistant via AVA voice assistants. This blueprint relies on the music assistant
-    media players have the same name as the AVA device. So media_player.xxx must match the device name xxx.
+    Control music assistant via AVA voice assistants. This blueprint relies on the music assistant
+    media players having the same name as the AVA device (so media_player.xxx matches device xxx). 
+    Includes remote speaker routing with fallback error checks if the remote entity or input is missing.
     
     <br>
     
@@ -30,17 +31,26 @@ blueprint:
   domain: automation
   input:
     default_speaker_options:
-      name: Default Speaker
+      name: Speaker Settings
       icon: mdi:speaker
       collapsed: false
       input:
         default_speaker:
-          name: Speaker
+          name: Default Speaker
           description: The speaker to use if voice satellite has no media player.
           selector:
             entity:
               filter:
                 - domain: media_player
+        remote_speaker:
+          name: Remote Speaker
+          description: Select the remote media player to target when you specifically say "on remote speaker". Leave blank if unused.
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: media_player
+
     # --- Collapsible Artist Section ---
     artist_options:
       name: Artist Voice Commands
@@ -53,7 +63,7 @@ blueprint:
           description: >
             Phrase used to play an artist's music.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|stream) [the ](artist|band|group|musician) {artist}"
+          default: "(play|listen to|put on|stream) [the ](artist|band|group|musician) {artist} [on remote speaker]"
           selector:
             text:
         artist_sentence_2:
@@ -61,7 +71,7 @@ blueprint:
           description: >
             Phrase used to shuffle an artist's music.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(shuffle|randomise) [the ](artist|band|group|musician) {artist}"
+          default: "(shuffle|randomise) [the ](artist|band|group|musician) {artist} [on remote speaker]"
           selector:
             text:
 
@@ -77,7 +87,7 @@ blueprint:
           description: >
             Phrase used to play a specific song or track.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{track}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|stream) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}]"
+          default: "(play|listen to|put on|stream) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}] [on remote speaker]"
           selector:
             text:
         track_sentence_2:
@@ -85,7 +95,7 @@ blueprint:
           description: >
             Phrase used to play a song with shuffling/radio fallback enabled.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{track}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(shuffle|randomise) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}]"
+          default: "(shuffle|randomise) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}] [on remote speaker]"
           selector:
             text:
 
@@ -101,7 +111,7 @@ blueprint:
           description: >
             Phrase used to play a specific playlist.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{playlist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|stream) [the ](playlist) {playlist}"
+          default: "(play|listen to|put on|stream) [the ](playlist) {playlist} [on remote speaker]"
           selector:
             text:
         playlist_sentence_2:
@@ -109,7 +119,7 @@ blueprint:
           description: >
             Phrase used to shuffle a specific playlist.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{playlist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(shuffle|randomise) [the ](playlist) {playlist}"
+          default: "(shuffle|randomise) [the ](playlist) {playlist} [on remote speaker]"
           selector:
             text:
 
@@ -125,7 +135,7 @@ blueprint:
           description: >
             Phrase used to play an album.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{album}</b></code> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|stream) [the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}]"
+          default: "(play|listen to|put on|stream) [the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}] [on remote speaker]"
           selector:
             text:
         album_sentence_2:
@@ -133,7 +143,7 @@ blueprint:
           description: >
             Phrase used to shuffle an album.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{album}</b></code> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(shuffle|randomise)[the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}]"
+          default: "(shuffle|randomise)[the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}] [on remote speaker]"
           selector:
             text:
 
@@ -149,7 +159,7 @@ blueprint:
           description: >
             Phrase used to tune into a radio station.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{radio}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|turn on|stream) [the ](radio|BBC|station|radio station) {radio}"
+          default: "(play|listen to|put on|turn on|stream) [the ](radio|BBC|station|radio station) {radio} [on remote speaker]"
           selector:
             text:
 
@@ -165,7 +175,7 @@ blueprint:
           description: >
             Phrase used to skip to the next track.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(next track|next song|skip|skip track|skip song)"
+          default: "(next track|next song|skip|skip track|skip song) [on remote speaker]"
           selector:
             text:
         previous_sentence:
@@ -173,7 +183,7 @@ blueprint:
           description: >
             Phrase used to return to the previous track.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(previous track|previous song|back|go back)"
+          default: "(previous track|previous song|back|go back) [on remote speaker]"
           selector:
             text:
         volume_up_sentence:
@@ -181,7 +191,7 @@ blueprint:
           description: >
             Phrase used to turn up the volume.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(volume up|louder|turn it up|crank it up|raise the volume)"
+          default: "(volume up|louder|turn it up|crank it up|raise the volume) [on remote speaker]"
           selector:
             text:
         volume_down_sentence:
@@ -189,7 +199,7 @@ blueprint:
           description: >
             Phrase used to lower the volume.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(volume down|quieter|turn it down|lower the volume)"
+          default: "(volume down|quieter|turn it down|lower the volume) [on remote speaker]"
           selector:
             text:
         stop_sentence:
@@ -197,7 +207,7 @@ blueprint:
           description: >
             Phrase used to halt playback.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(stop|cancel|pause|hush|shut up) [the ][music|audio|radio|playback]"
+          default: "(stop|cancel|pause|hush|shut up) [the ][music|audio|radio|playback] [on remote speaker]"
           selector:
             text:
 
@@ -253,15 +263,55 @@ condition: []
 
 action:
   - variables:
-      sat: "{{trigger.satellite_id.split('.')}}"
+      sat: "{{trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', '']}}"
       default: !input default_speaker
-      speaker: >
-        {% if sat[1] != "" %}
+      remote: !input remote_speaker
+      spoken_sentence: "{{ trigger.sentence | default('', true) | lower }}"
+      
+      # Determine base local/satellite target
+      base_speaker: >
+        {% if sat | length > 1 and sat[1] != "" %}
           media_player.{{sat[1]}}
         {% else %}
-          {{default}}
+          {{ default }}
         {% endif %}
-      
+
+      # Clean replacement logic: If "on remote speaker" is in the text, use remote. Otherwise base local.
+      speaker: >
+        {% if 'on remote speaker' in spoken_sentence and remote is defined and remote | length > 0 %}
+          {{ remote }}
+        {% else %}
+          {{ base_speaker }}
+        {% endif %}
+
+      # Guard check 1: User asked for remote speaker, but none was defined in the blueprint
+      no_remote_configured: >
+        {% set explicit_remote = 'on remote speaker' in spoken_sentence %}
+        {{ explicit_remote and (remote is not defined or remote | length == 0) }}
+
+      # Guard check 2: Remote speaker was defined, but it's offline or dead
+      remote_unavailable: >
+        {% set explicit_remote = 'on remote speaker' in spoken_sentence %}
+        {{ explicit_remote and remote is defined and remote | length > 0 and states(remote) in ['unavailable', 'unknown', 'off'] }}
+
+  - choose:
+      # Branch 0a: Guard clause for unconfigured remote speaker input
+      - conditions:
+          - condition: template
+            value_template: "{{ no_remote_configured }}"
+        sequence:
+          - set_conversation_response: "No remote speaker setup."
+          - stop: "No remote speaker configured"
+
+      # Branch 0b: Guard clause for offline/unavailable remote speaker entity
+      - conditions:
+          - condition: template
+            value_template: "{{ remote_unavailable }}"
+        sequence:
+          - set_conversation_response: "Remote speaker not ready."
+          - stop: "Remote speaker unavailable"
+
+  - variables:
       radio: "{{ trigger.slots.radio | default('') }}"
       artist: "{{ trigger.slots.artist | default('') }}"
       album: "{{ trigger.slots.album | default('') }}"
@@ -270,7 +320,7 @@ action:
 
       media_type: "{{ trigger.id.split('_') | first }}"
       
-      # Transport action assignment (volume controls handled separately)
+      # Transport action assignment
       action: >-
         {% if trigger.id == 'media_stop' %}
           media_player.media_stop
@@ -283,8 +333,8 @@ action:
         {% endif %}
 
       media_id: "{{ radio }} {{ artist }} {{ album }} {{ playlist }} {{ track }}"
-      shuffle: >-
-        {{ 'shuffle' in trigger.sentence | lower or 'random' in trigger.sentence | lower }}
+      shuffle: >
+        {{ 'shuffle' in spoken_sentence or 'random' in spoken_sentence }}
 
       # Math section for calculated volume stepping
       current_volume: "{{ state_attr(speaker, 'volume_level') | float(0.3) }}"
@@ -304,7 +354,7 @@ action:
       shuffle: false
 
   - choose:
-      # Branch 1: Unified calculated volume tracking (Fixed Action call)
+      # Branch 1: Unified calculated volume tracking
       - conditions:
           - condition: template
             value_template: "{{ trigger.id in ['volume_up', 'volume_down'] }}"

@@ -1,0 +1,98 @@
+blueprint:
+  name: Voice Assistant Volume Ducking (Multi-Satellite)
+  author: Lonebaggie
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🔊 Multi-Satellite Voice Assistant Volume Ducking
+    
+    Automatically lowers the volume of other media players in the same area when 
+    any of your selected voice satellites start listening, and instantly restores their 
+    original volumes once the interaction finishes.
+  domain: automation
+  input:
+    voice_satellites:
+      name: Voice Satellites
+      description: Select one or more assist satellite entities that trigger the ducking behavior.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: assist_satellite
+    ducking_level:
+      name: Ducking Volume Percentage
+      description: The percentage of the original volume to drop the background media players down to.
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 90
+          step: 5
+          unit_of_measurement: "%"
+          mode: slider
+
+mode: restart
+
+trigger:
+  - platform: state
+    entity_id: !input voice_satellites
+    to: listening
+
+action:
+  - variables:
+      active_satellite: "{{ trigger.entity_id }}"
+      satellite_area: "{{ area_id(active_satellite) }}"
+      area_media_players: "{{ area_entities(satellite_area) | select('match', 'media_player.') | list }}"
+      sat_slug: "{{ active_satellite.split('.')[1] | replace('_satellite', '') | replace('_microphone', '') }}"
+      associated_media: "media_player.{{ sat_slug }}"
+      
+      raw_ducking: !input ducking_level
+      ducking_multiplier: "{{ raw_ducking | float(30) / 100 }}"
+      
+      target_speakers: >
+        {% set ns = namespace(speakers=[]) %}
+        {% for player in area_media_players %}
+          {% if player != associated_media and state_attr(player, 'volume_level') is not none and not is_state(player, 'off') %}
+            {% set ns.speakers = ns.speakers + [player] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.speakers }}
+
+      original_volumes: >
+        {% set ns = namespace(dict={}) %}
+        {% for player in target_speakers %}
+          {% set vol = state_attr(player, 'volume_level') | float %}
+          {% set ns.dict = ns.dict | combine({player: vol}) %}
+        {% endfor %}
+        {{ ns.dict }}
+
+  - condition: template
+    value_template: "{{ target_speakers | length > 0 }}"
+
+  - repeat:
+      for_each: "{{ target_speakers }}"
+      sequence:
+        - action: media_player.volume_set
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            volume_level: >
+              {% set current = original_volumes[repeat.item] %}
+              {{ [current * ducking_multiplier, 0.05] | max | round(2) }}
+
+  # Use a template platform for the wait step to completely bypass strict entity_id schema validation
+  - wait_for_trigger:
+      - platform: template
+        value_template: >
+          {{ is_state(active_satellite, 'idle') or is_state(active_satellite, 'ready') or is_state(active_satellite, 'off') }}
+    timeout: "00:00:20"
+    continue_on_timeout: true
+
+  - repeat:
+      for_each: "{{ target_speakers }}"
+      sequence:
+        - action: media_player.volume_set
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            volume_level: "{{ original_volumes[repeat.item] }}"
