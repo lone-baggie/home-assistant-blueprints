@@ -5,7 +5,7 @@ blueprint:
     min_version: 2024.6.0
   description: >
     ### 🕰 Displays clock on screen. blueprint relies on the music assistant
-    media players have the same name as the AVA device. So media_player.xxx must match the device name xxx.
+    media players have the same name as the AVA device. So media_player.xxx must match the device name xxx .
   domain: automation 
   input:
     fallback_media_player:
