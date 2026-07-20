@@ -71,7 +71,7 @@ blueprint:
         weather_sentence_1:
           name: Weather Command 
           description: The primary phrase used to ask for the general weather.
-          default: "whats [the] weather [today]"
+          default: "what's the weather [today]"
           selector:
             text:
         weather_sentence_2:
