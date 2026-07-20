@@ -10,7 +10,7 @@ blueprint:
   input:
     fallback_media_player:
       name: Fallback Speaker
-      description: The speaker to use if no satellite location is detected.
+      description: The speaker to use if voice satellite has no media player
       selector:
         entity:
           filter:

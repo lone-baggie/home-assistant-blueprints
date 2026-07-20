@@ -1,5 +1,5 @@
 blueprint:
-  name: "AVA turn on screen saver"
+  name: "AVA Turn on screensaver"
   author: "Lone baggie"
   homeassistant:
     min_version: 2024.6.0
@@ -16,11 +16,6 @@ blueprint:
         entity:
           filter:
             - domain: media_player
-    screen_saver_url:
-      name: URL of screen saver
-      description: URL
-      selector:
-        text:
     # --- Collapsible Voice Phrases Section with Syntax Guide ---
     voice_command_options:
       name: Voice Phrases
@@ -74,15 +69,7 @@ action:
         {% else %}
           {{default}}
         {% endif %}
-      text: text.{{sat[1]}}_screensaver_url
-      url: !input screen_saver_url
 
-  - action: text.set_value
-    metadata: {}
-    target:
-      entity_id: "{{text}}"
-    data:
-      value: "{{url}}"
   - action: switch.turn_off
     metadata: {}
     target:
