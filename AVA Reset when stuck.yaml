@@ -29,6 +29,11 @@ trigger:
       entity_id: !input satellite_entities
     options:
       for: !input stuck_duration
+  - trigger: assist_satellite.responding
+    target:
+      entity_id: !input satellite_entities
+    options:
+      for: !input stuck_duration
 
 condition: []
 

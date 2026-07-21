@@ -52,7 +52,7 @@ action:
       target_speakers: >
         {% set ns = namespace(speakers=[]) %}
         {% for player in area_media_players %}
-          {% if player != associated_media and state_attr(player, 'volume_level') is not none and not is_state(player, 'off') %}
+          {% if player != associated_media and state_attr(player, 'volume_level') is not none and  is_state(player, 'playing') %}
             {% set ns.speakers = ns.speakers + [player] %}
           {% endif %}
         {% endfor %}

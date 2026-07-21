@@ -1,0 +1,95 @@
+blueprint:
+  name: "AVA Display alarms "
+  author: "Lone baggie"
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🕰 Displays current alarms  on screen. Needs voice alarms intergration. .
+  domain: automation 
+  input:
+    fallback_media_player:
+      name: Fallback Speaker
+      description: The speaker to use if voice satellite has no media player
+      selector:
+        entity:
+          filter:
+            - domain: media_player
+
+    html:
+      name: HTML display
+      description: Enter URL of page to display on device. 
+      default: http://192.168.0.254:8123/local/alarms.html
+      selector:
+        text:
+    voice_command_options:
+      name: Alarm Phrases
+      icon: mdi:account-voice
+      collapsed: false
+      description: >
+        Custom voice sentences that will trigger the alarms screen.
+
+        <br>
+
+        <details>
+          <summary><b>ℹ️ Click to view the Voice Command Syntax Guide</b></summary>
+          <br>
+          When editing the phrases below, use these rules to tweak your phrases:
+          
+          * <b>[Square Brackets]</b> = Optional words. Matches with or without them.
+            * *Example:* `[what is] the weather` matches both "the weather" and "what is the weather".
+            
+          * <b>(Pipes | inside | parentheses)</b> = Alternative words (OR). Matches any single phrase.
+            * *Example:* `(tell me|give me)` matches "tell me..." or "give me...".
+        </details>
+      input:
+        alarm_sentence_1:
+          name: Alarm Command 
+          description: The primary phrase used to display the alarms.
+          default: "show [me] the alarms"
+          selector:
+            text:
+        alarm_sentence_2:
+          name: Secondary alarm Command 
+          description: The secondary phrase to display the alarms.
+          default: "display [the] alarms"
+          selector:
+            text:
+mode: single
+
+trigger:
+  - trigger: conversation
+    command:
+      - !input alarm_sentence_1
+      - !input alarm_sentence_2
+
+condition: []
+
+action:
+
+  - variables:
+      sat: "{{trigger.satellite_id.split('.')}}"
+      default: !input fallback_media_player
+      url: !input html
+      speaker: >
+        {% if sat[1] != "" %}
+          media_player.{{sat[1]}}
+        {% else %}
+          {{default}}
+        {% endif %}
+      switch: switch.{{sat[1]}}_browser_display
+      text: text.{{sat[1]}}_remote_browser_url
+  - action: text.set_value
+    metadata: {}
+    target:
+      entity_id: "{{text}}"
+    data:
+      value: "{{url}}"
+
+  - action: switch.turn_on
+    metadata: {}
+    target:
+      entity_id: "{{switch}}"
+    data: {} 
+
+
+  

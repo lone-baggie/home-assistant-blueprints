@@ -204,13 +204,13 @@ blueprint:
         deletetodo_sentence_1:
           name: Primary Delete todo 
           description: The primary phrase to delete the list.
-          default: "Delete (my|the) (shopping|todo) list"
+          default: "(delete|remove|empty) (my|the) (shopping|todo) list"
           selector:
             text:
         deletetodo_sentence_2:
           name: Secondary Delete todo 
           description: The secondary phrase to delete the list.
-          default: "Remove (my|the) (shopping|todo) list"
+          default: "(delete|remove|empty) all items from (my|the) (shopping|todo) list"
           selector:
             text:
 
