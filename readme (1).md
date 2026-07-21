@@ -216,3 +216,6 @@ Found a bug or have a suggestion for improving these blueprints? Please open an 
 ---
 
 *Created with ❤️ for the Home Assistant Community.*  
+
+
+#
