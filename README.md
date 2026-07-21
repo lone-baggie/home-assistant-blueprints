@@ -65,7 +65,7 @@ Displays the HTML page via voice control.
 
 #### Description
 
-Pulls daily forecast data from your Home Assistant weather entity and formats it for voice readouts or display via HTML
+Pulls daily forecast data from your Home Assistant weather entity and formats it for voice readouts or display via HTML.
 
 #### Features
 
