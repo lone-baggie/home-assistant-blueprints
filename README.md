@@ -190,7 +190,7 @@ Voice control for **Music Assistant** integration in Home Assistant.
 
 #### Description
 
-Automatically dips (ducks) the background audio volume on playing media players in the same area.
+Automatically dips (ducks) the background audio volume on playing media players in the same area as the AVA device. It also allows another area to be added to allow portable speakers to be included.
 
 ---
 
