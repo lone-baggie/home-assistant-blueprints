@@ -25,13 +25,6 @@ blueprint:
             entity:
               filter:
                 - domain: weather
-        fallback_media_player:
-          name: Fallback Speaker
-          description: The speaker to use if voice satellite has no media player.
-          selector:
-            entity:
-              filter:
-                - domain: media_player
         display:
           name: Display HTML page on device
           description: Toggle to display web page on device
@@ -221,17 +214,7 @@ action:
       
       # Safely handle satellite splitting
       sat: "{{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', ''] }}"
-      
-      default: !input fallback_media_player
-      display: !input display
-      
-      speaker: >
-        {% if sat | length > 1 and sat[1] != "" %}
-          media_player.{{sat[1]}}
-        {% else %}
-          {{default}}
-        {% endif %}
-        
+
       switch: >
         {% if sat | length > 1 and sat[1] != "" %}
           switch.{{ sat[1] }}_browser_display
@@ -308,13 +291,4 @@ action:
         target:
           entity_id: "{{ switch }}"
         data: {} 
-
-  - action: tts.speak
-    target:
-      entity_id: tts.home_assistant_cloud
-    data:
-      media_player_entity_id: "{{ speaker }}"
-      message: "{{ weather_summary }}"
-      options:
-        voice: Bella
-  - set_conversation_response: ""
+  - set_conversation_response: "{{ weather_summary }}"

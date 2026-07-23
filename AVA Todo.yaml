@@ -29,13 +29,6 @@ blueprint:
           default: "Shopping list"
           selector:
             text:
-        fallback_media_player:
-          name: Fallback Speaker
-          description: The speaker to use if voice satellite has no media player
-          selector:
-            entity:
-              filter:
-                - domain: media_player
         display:
           name: Display HTML page on device
           description: Toggle to display web page on device
@@ -251,13 +244,6 @@ action:
       display: !input display
       item: "{{ trigger.slots.item | default('')|capitalize }}"
       sat: "{{trigger.satellite_id.split('.')}}"
-      default: !input fallback_media_player
-      speaker: >
-        {% if sat[1] != "" %}
-          media_player.{{sat[1]}}
-        {% else %}
-          {{default}}
-        {% endif %}
       switch: switch.{{sat[1]}}_browser_display
       text: text.{{sat[1]}}_remote_browser_url
   - if:
@@ -308,15 +294,8 @@ action:
                     {% else %}
                         {{ empty_phrase| replace('{name}', name) }}
                     {% endif %}
-          - action: tts.speak
-            target:
-              entity_id: tts.home_assistant_cloud
-            data:
-              media_player_entity_id: "{{ speaker }}"
-              message: "{{ final_speech }}"
-              options:
-                voice: Bella
-          - set_conversation_response: ""
+
+          - set_conversation_response: "{{final_speech}}"
       - conditions:
           - condition: template
             value_template: "{{ trigger.id in ['addtodo'] }}"

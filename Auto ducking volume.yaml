@@ -30,6 +30,11 @@ blueprint:
           step: 5
           unit_of_measurement: "%"
           mode: slider
+    add_area:
+      name: Additional area to include
+      description: Add another area to include portable speakers 
+      selector:
+        area:
 
 mode: restart
 
@@ -40,9 +45,12 @@ trigger:
 
 action:
   - variables:
+      add_area: !input add_area
       active_satellite: "{{ trigger.entity_id }}"
       satellite_area: "{{ area_id(active_satellite) }}"
-      area_media_players: "{{ area_entities(satellite_area) | select('match', 'media_player.') | list }}"
+      base_media_players: "{{ area_entities(satellite_area) | select('match', 'media_player.') | list }}"
+      add_media_players: "{{ area_entities(add_area) | select('match', 'media_player.') | list }}"
+      area_media_players: "{{ base_media_players + add_media_players}}"
       sat_slug: "{{ active_satellite.split('.')[1] | replace('_satellite', '') | replace('_microphone', '') }}"
       associated_media: "media_player.{{ sat_slug }}"
       

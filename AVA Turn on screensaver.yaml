@@ -38,12 +38,19 @@ blueprint:
             * *Example:* `(tell me|give me)` matches "tell me..." or "give me...".
         </details>
       input:
-        screen_sentence:
-          name: Screen saver command 
+        screen_sentence_1:
+          name: Primary Screen saver command 
           description: The phrase to turn on Screen saver
-          default: "Turn on [the] screen saver [now]"
+          default: "(display|start|open|) [the] screensaver [now]"
           selector:
             text:
+        screen_sentence_2:
+          name: Secondary Screen saver command 
+          description: The phrase to turn on Screen saver
+          default: "turn on the  screensaver [now]"
+          selector:
+            text:
+
 
 
 mode: single
@@ -51,7 +58,9 @@ mode: single
 trigger:
   - trigger: conversation
     command:
-      - !input screen_sentence
+      - !input screen_sentence_1
+      - !input screen_sentence_2
+      
 
 condition: []
 
