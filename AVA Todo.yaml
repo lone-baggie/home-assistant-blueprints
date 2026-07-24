@@ -243,12 +243,15 @@ action:
       url: !input html
       display: !input display
       item: "{{ trigger.slots.item | default('')|capitalize }}"
-      sat: "{{trigger.satellite_id.split('.')}}"
+      sat: >
+            {{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and
+            trigger.satellite_id is not none and '.' in trigger.satellite_id else ['',
+            ''] }}
       switch: switch.{{sat[1]}}_browser_display
       text: text.{{sat[1]}}_remote_browser_url
   - if:
       - condition: template
-        value_template: "{{display}}"
+        value_template: "{{ 'true' if display and sat[1] else 'false' }}"
     then:
       - action: text.set_value
         metadata: {}

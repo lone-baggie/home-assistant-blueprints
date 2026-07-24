@@ -210,6 +210,14 @@ blueprint:
           default: "(stop|cancel|pause|hush|shut up) [the ][music|audio|radio|playback] [on remote speaker]"
           selector:
             text:
+        play_sentence:
+          name: Play Music Phrase
+          description: >
+            Phrase used to start playback.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "(play|start|begin) [the ][music|audio|radio|playback] [on remote speaker]"
+          selector:
+            text:
 
 mode: single
 
@@ -258,6 +266,10 @@ trigger:
     command:
       - !input stop_sentence
     id: media_stop
+  - trigger: conversation
+    command:
+      - !input play_sentence
+    id: media_play
 
 condition: []
 
@@ -324,6 +336,8 @@ action:
       action: >-
         {% if trigger.id == 'media_stop' %}
           media_player.media_stop
+        {% elif trigger.id == 'media_play' %}
+          media_player.media_play
         {% elif trigger.id == 'media_next' %}
           media_player.media_next_track
         {% elif trigger.id == 'media_previous' %}
@@ -368,7 +382,7 @@ action:
       # Branch 2: Standard Transport Controls (Stop, Skip, Prev)
       - conditions:
           - condition: template
-            value_template: "{{ trigger.id in ['media_stop', 'media_next', 'media_previous'] }}"
+            value_template: "{{ trigger.id in ['media_stop','media_play', 'media_next', 'media_previous'] }}"
         sequence:
           - action: "{{ action }}"
             target:

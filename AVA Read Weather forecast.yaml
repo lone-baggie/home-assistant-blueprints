@@ -1,15 +1,13 @@
 blueprint:
   name: "AVA Read Weather forecast"
-  author: "Lone baggie (Expanded with Aligned Input Naming)"
+  author: "Lone baggie (Universal Tags with Dynamic {greeting})"
   homeassistant:
     min_version: 2024.6.0
   description: >
     ### 🌤 Weather Report & Direct Answers for AVA assistants
     
-    Creates a natural sounding weather report or answers specific questions like 
-    "Will it rain today?" and "What temperature will it be today?" using fully 
-    aligned voice input field labels. Relies on music assistant media players 
-    having the same name as the AVA device.
+    Creates a natural sounding weather report and direct answers using a single master template string 
+    with inline bracket tags `[m:...]`, `[a:...]`, `[e:...]`, and a dynamic `{greeting}` tag!
   domain: automation
   input:
     # --- Core Hardware Options Group ---
@@ -28,9 +26,9 @@ blueprint:
         display:
           name: Display HTML page on device
           description: Toggle to display web page on device
-          selector:
-            boolean:
           default: false
+          selector:
+            boolean: {}
         html:
           name: HTML display
           description: Enter URL of page to display on device. 
@@ -129,20 +127,22 @@ blueprint:
 
     # --- Collapsible Script Customization with Word Replacement Guide ---
     speech_profile_options:
-      name: Weather Speech
+      name: Weather Speech (Universal Bracket Tags)
       icon: mdi:chat
       collapsed: true
       description: >
-        Adjust the exact phrases your smart assistant will say out loud.
+        Configure your speech templates using inline bracket tags `[m:...]` (Morning), 
+        `[a:...]` (Afternoon), and `[e:...]` (Evening) across all report types.
 
         <br>
 
         <details>
-          <summary><b>ℹ️ Word Replacement Guide</b></summary>
+          <summary><b>ℹ️ Word Replacement & Tag Guide</b></summary>
           <br>
-          You can type these exact tags into your text templates underneath:
-          
-          * <b>{location}</b> = The name of your weather area (e.g., Home, Work).
+          * <b>{greeting}</b> = Dynamic time-based greeting (Good morning / afternoon / evening).
+          * <b>[m:Text] [a:Text] [e:Text]</b> = Time-of-day specific phrasing block.
+          * <b>{location}</b> = The name of your weather area.
+          * <b>{current_temp}</b> = The current outdoor temperature right now.
           * <b>{condition}</b> = Your custom friendly wording for the current weather status.
           * <b>{high}</b> = Today's highest expected temperature.
           * <b>{low}</b> = Tonight's lowest expected temperature.
@@ -151,32 +151,41 @@ blueprint:
       input:
         weather_text_template:
           name: Full Weather Report Template
-          description: Edit the script for a full weather breakdown.
+          description: Master template utilizing {greeting} and time-of-day brackets.
           default: >-
-            Today in {location}, the weather is expected to be {condition}. 
-            The high will reach {high} degrees, and tonight it will drop to a low of {low} degrees. 
-            There is a {rain_chance} percent chance of rain.
+            {greeting}, [m:in {location}, it is currently {current_temp} degrees and looking {condition}. Expect a high of {high} and a low of {low}, with a {rain_chance} percent chance of rain.]
+            [a:things are currently sitting at {current_temp} degrees with {condition}. We are heading for a high of {high}, dropping to {low} later tonight.]
+            [e:it's currently {current_temp} degrees and {condition}. Overnight, we can expect a low of {low}, with a {rain_chance} percent chance of rain.]
           selector:
             text:
               multiline: true
         rain_text_template:
           name: Rain Answer Template
-          description: Spoken text when asked if it will rain.
-          default: "Yes, there is a {rain_chance} percent chance of rain today."
+          description: Spoken text when asked if it will rain (chance > 20%).
+          default: >-
+            {greeting}, [m:yes, there is a {rain_chance} percent chance of rain on the cards today.]
+            [a:yes, we are tracking a {rain_chance} percent chance of rain this afternoon.]
+            [e:yes, expect a {rain_chance} percent chance of precipitation moving in tonight.]
           selector:
             text:
               multiline: true
         no_rain_text_template:
           name: No Rain Answer Template
           description: Spoken text when the rain chance is low or zero.
-          default: "No, it looks dry today with only a {rain_chance} percent chance of rain."
+          default: >-
+            {greeting}, [m:no rain expected this morning, keeping it dry with a mere {rain_chance} percent chance.]
+            [a:it looks clear and dry for the afternoon, sitting at a {rain_chance} percent chance of rain.]
+            [e:tonight is staying dry with just a {rain_chance} percent chance of rain.]
           selector:
             text:
               multiline: true
         temp_text_template:
           name: Temperature Answer Template
           description: Spoken text when asked about today's temperature.
-          default: "Today in {location}, the high will reach {high} degrees with a low of {low} degrees."
+          default: >-
+            {greeting}, [m:it's sitting at {current_temp} degrees, climbing to a high of {high} later.]
+            [a:it's {current_temp} degrees right now, peaking at a high of {high}.]
+            [e:temperatures have settled to {current_temp} degrees, dropping to a low of {low} tonight.]
           selector:
             text:
               multiline: true
@@ -205,11 +214,12 @@ action:
       type: daily
     response_variable: met_office_output
   - variables:
+      display: !input display
       url: !input html
-      raw_text_template: !input weather_text_template
-      rain_tpl: !input rain_text_template
-      no_rain_tpl: !input no_rain_text_template
-      temp_tpl: !input temp_text_template
+      raw_weather_tpl: !input weather_text_template
+      raw_rain_tpl: !input rain_text_template
+      raw_no_rain_tpl: !input no_rain_text_template
+      raw_temp_tpl: !input temp_text_template
       state_map: !input custom_state_map
       
       # Safely handle satellite splitting
@@ -229,7 +239,128 @@ action:
           text.dummy
         {% endif %}
       
-      # Grab live daily data out of the core payload response
+      # Determine current hour, bracket prefix to match, and dynamic greeting text
+      current_hour: "{{ now().hour | int }}"
+      active_prefix: >-
+        {% set h = current_hour | int %}
+        {% if h >= 5 and h < 12 %}[m:
+        {% elif h >= 12 and h < 17 %}[a:
+        {% else %}[e:
+        {% endif %}
+
+      dynamic_greeting: >-
+        {% set h = current_hour | int %}
+        {% if h >= 5 and h < 12 %}Good morning
+        {% elif h >= 12 and h < 17 %}Good afternoon
+        {% else %}Good evening
+        {% endif %}
+
+      # Clean bracket macro implementation for the main report
+      clean_weather_template: >
+        {% set raw = raw_weather_tpl %}
+        {% set active = active_prefix %}
+        {% set ns = namespace(result=raw) %}
+        {% for p in ['[m:', '[a:', '[e:'] %}
+          {% if p != active %}
+            {% set s_idx = ns.result.find(p) %}
+            {% if s_idx != -1 %}
+              {% set e_idx = ns.result.find(']', s_idx) %}
+              {% if e_idx != -1 %}
+                {% set ns.result = ns.result[:s_idx] ~ ns.result[e_idx + 1:] %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% set s_idx = ns.result.find(active) %}
+        {% if s_idx != -1 %}
+          {% set e_idx = ns.result.find(']', s_idx) %}
+          {% if e_idx != -1 %}
+            {% set inner = ns.result[s_idx + 3 : e_idx] %}
+            {% set ns.result = ns.result[:s_idx] ~ inner ~ ns.result[e_idx + 1:] %}
+          {% endif %}
+        {% endif %}
+        {{ ns.result | trim }}
+
+      # Clean bracket macro for rain templates
+      clean_rain_template: >
+        {% set raw = raw_rain_tpl %}
+        {% set active = active_prefix %}
+        {% set ns = namespace(result=raw) %}
+        {% for p in ['[m:', '[a:', '[e:'] %}
+          {% if p != active %}
+            {% set s_idx = ns.result.find(p) %}
+            {% if s_idx != -1 %}
+              {% set e_idx = ns.result.find(']', s_idx) %}
+              {% if e_idx != -1 %}
+                {% set ns.result = ns.result[:s_idx] ~ ns.result[e_idx + 1:] %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% set s_idx = ns.result.find(active) %}
+        {% if s_idx != -1 %}
+          {% set e_idx = ns.result.find(']', s_idx) %}
+          {% if e_idx != -1 %}
+            {% set inner = ns.result[s_idx + 3 : e_idx] %}
+            {% set ns.result = ns.result[:s_idx] ~ inner ~ ns.result[e_idx + 1:] %}
+          {% endif %}
+        {% endif %}
+        {{ ns.result | trim }}
+
+      # Clean bracket macro for no rain templates
+      clean_no_rain_template: >
+        {% set raw = raw_no_rain_tpl %}
+        {% set active = active_prefix %}
+        {% set ns = namespace(result=raw) %}
+        {% for p in ['[m:', '[a:', '[e:'] %}
+          {% if p != active %}
+            {% set s_idx = ns.result.find(p) %}
+            {% if s_idx != -1 %}
+              {% set e_idx = ns.result.find(']', s_idx) %}
+              {% if e_idx != -1 %}
+                {% set ns.result = ns.result[:s_idx] ~ ns.result[e_idx + 1:] %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% set s_idx = ns.result.find(active) %}
+        {% if s_idx != -1 %}
+          {% set e_idx = ns.result.find(']', s_idx) %}
+          {% if e_idx != -1 %}
+            {% set inner = ns.result[s_idx + 3 : e_idx] %}
+            {% set ns.result = ns.result[:s_idx] ~ inner ~ ns.result[e_idx + 1:] %}
+          {% endif %}
+        {% endif %}
+        {{ ns.result | trim }}
+
+      # Clean bracket macro for temperature templates
+      clean_temp_template: >
+        {% set raw = raw_temp_tpl %}
+        {% set active = active_prefix %}
+        {% set ns = namespace(result=raw) %}
+        {% for p in ['[m:', '[a:', '[e:'] %}
+          {% if p != active %}
+            {% set s_idx = ns.result.find(p) %}
+            {% if s_idx != -1 %}
+              {% set e_idx = ns.result.find(']', s_idx) %}
+              {% if e_idx != -1 %}
+                {% set ns.result = ns.result[:s_idx] ~ ns.result[e_idx + 1:] %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% set s_idx = ns.result.find(active) %}
+        {% if s_idx != -1 %}
+          {% set e_idx = ns.result.find(']', s_idx) %}
+          {% if e_idx != -1 %}
+            {% set inner = ns.result[s_idx + 3 : e_idx] %}
+            {% set ns.result = ns.result[:s_idx] ~ inner ~ ns.result[e_idx + 1:] %}
+          {% endif %}
+        {% endif %}
+        {{ ns.result | trim }}
+
+      # Grab live core sensor values and daily forecast array data (rounded to nearest integer)
+      current_temp_val: "{{ state_attr(weather, 'temperature') | default(states(weather), true) | float(0) | round(0) }}"
       today: "{{ met_office_output[weather].forecast[0] }}"
       location_name: "{{ state_attr(weather, 'friendly_name') }}"
       
@@ -244,26 +375,29 @@ action:
       # Safely grab matched sentence text, defaulting to an empty string if None
       matched_sentence: "{{ trigger.sentence | default('', true) | lower }}"
 
-      # Construct individual message variants
+      # Construct individual message variants using dynamic greeting, rounded temps, and bracket templates
       rain_message: >-
-        {% if rain_chance_val > 20 %}
-          {{ rain_tpl | replace('{rain_chance}', rain_chance_val) }}
-        {% else %}
-          {{ no_rain_tpl | replace('{rain_chance}', rain_chance_val) }}
-        {% endif %}
+        {% set content = (clean_rain_template if rain_chance_val > 20 else clean_no_rain_template) %}
+        {{ content 
+          | replace('{greeting}', dynamic_greeting)
+          | replace('{rain_chance}', rain_chance_val) }}
 
       temp_message: >-
-        {{ temp_tpl 
+        {{ clean_temp_template 
+          | replace('{greeting}', dynamic_greeting)
           | replace('{location}', location_name)
-          | replace('{high}', today.temperature)
-          | replace('{low}', today.templow) }}
+          | replace('{current_temp}', current_temp_val)
+          | replace('{high}', today.temperature | float(0) | round(0))
+          | replace('{low}', today.templow | float(0) | round(0)) }}
 
       full_message: >-
-        {{ raw_text_template 
+        {{ clean_weather_template 
+          | replace('{greeting}', dynamic_greeting)
           | replace('{location}', location_name)
+          | replace('{current_temp}', current_temp_val)
           | replace('{condition}', friendly_condition)
-          | replace('{high}', today.temperature)
-          | replace('{low}', today.templow)
+          | replace('{high}', today.temperature | float(0) | round(0))
+          | replace('{low}', today.templow | float(0) | round(0))
           | replace('{rain_chance}', rain_chance_val) }}
 
       # Final selector for what the assistant will actually say using keywords from our sentences
@@ -278,7 +412,7 @@ action:
 
   - if:
       - condition: template
-        value_template: "{{ display }}"
+        value_template: "{{ 'true' if display and sat[1] else 'false' }}"
     then:
       - action: text.set_value
         metadata: {}
