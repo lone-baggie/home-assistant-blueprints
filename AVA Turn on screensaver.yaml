@@ -9,14 +9,6 @@ blueprint:
     
   domain: automation 
   input:
-    fallback_media_player:
-      name: Fallback Speaker
-      description: The speaker to use if no speaker found.
-      selector:
-        entity:
-          filter:
-            - domain: media_player
-    # --- Collapsible Voice Phrases Section with Syntax Guide ---
     voice_command_options:
       name: Voice Phrases
       icon: mdi:account-voice
@@ -67,26 +59,23 @@ condition: []
 action:
 
   - variables:
-      fallback_player: !input fallback_media_player
-      # Find out which physical room sent the trigger to target the closest local speaker
-      sat: "{{trigger.satellite_id.split('.')}}"
-      switch: switch.{{sat[1]}}_screensaver_display
-      default: !input fallback_media_player
-      speaker: >
-        {% if sat[1] != "" %}
-          media_player.{{sat[1]}}
-        {% else %}
-          {{default}}
-        {% endif %}
+      entity: "{{trigger.satellite_id}}"
+      device: "{{ device_name(entity)}}"
+      switch_ss: "switch.{{ device }}_screensaver_display"
 
+  - if:
+    - condition: template
+      value_template: "{{ entity is none}}"
+    then:
+      - stop: ""
   - action: switch.turn_off
     metadata: {}
     target:
-      entity_id: "{{switch}}"
+      entity_id: "{{switch_ss}}"
     data: {}
   - action: switch.turn_on
     metadata: {}
     target:
-      entity_id: "{{switch}}"
+      entity_id: "{{switch_ss}}"
     data: {}
   

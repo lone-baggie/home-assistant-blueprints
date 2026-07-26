@@ -7,14 +7,6 @@ blueprint:
     ### 🕰 Displays current alarms  on screen. Needs voice alarms intergration. .
   domain: automation 
   input:
-    fallback_media_player:
-      name: Fallback Speaker
-      description: The speaker to use if voice satellite has no media player
-      selector:
-        entity:
-          filter:
-            - domain: media_player
-
     html:
       name: HTML display
       description: Enter URL of page to display on device. 
@@ -67,28 +59,27 @@ condition: []
 action:
 
   - variables:
-      sat: "{{trigger.satellite_id.split('.')}}"
-      default: !input fallback_media_player
       url: !input html
-      speaker: >
-        {% if sat[1] != "" %}
-          media_player.{{sat[1]}}
-        {% else %}
-          {{default}}
-        {% endif %}
-      switch: switch.{{sat[1]}}_browser_display
-      text: text.{{sat[1]}}_remote_browser_url
+      entity: "{{trigger.satellite_id}}"
+      device: "{{ device_name(entity)}}"
+      switch_br: "switch.{{ device }}_browser_display"
+      text_br: "text.{{ device }}_browser_url"
+  - if:
+    - condition: template
+      value_template: "{{ entity is none}}"
+    then:
+      - stop: ""
   - action: text.set_value
     metadata: {}
     target:
-      entity_id: "{{text}}"
+      entity_id: "{{text_br}}"
     data:
       value: "{{url}}"
 
   - action: switch.turn_on
     metadata: {}
     target:
-      entity_id: "{{switch}}"
+      entity_id: "{{switch_br}}"
     data: {} 
 
 

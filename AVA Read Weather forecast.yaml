@@ -221,23 +221,12 @@ action:
       raw_no_rain_tpl: !input no_rain_text_template
       raw_temp_tpl: !input temp_text_template
       state_map: !input custom_state_map
-      
-      # Safely handle satellite splitting
-      sat: "{{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', ''] }}"
-
-      switch: >
-        {% if sat | length > 1 and sat[1] != "" %}
-          switch.{{ sat[1] }}_browser_display
-        {% else %}
-          switch.dummy
-        {% endif %}
-        
-      text: >
-        {% if sat | length > 1 and sat[1] != "" %}
-          text.{{ sat[1] }}_remote_browser_url
-        {% else %}
-          text.dummy
-        {% endif %}
+      entity: "{{trigger.satellite_id}}"
+      device: "{{ device_name(entity)}}"
+      switch_ss: "switch.{{ device }}_screensaver_display"
+      switch_br: "switch.{{ device }}_browser_display"
+      text_br: "text.{{ device }}_browser_url"
+      media_player: "media_player.{{ device }}"
       
       # Determine current hour, bracket prefix to match, and dynamic greeting text
       current_hour: "{{ now().hour | int }}"
@@ -412,17 +401,17 @@ action:
 
   - if:
       - condition: template
-        value_template: "{{ 'true' if display and sat[1] else 'false' }}"
+        value_template: "{{ 'true' if display and entity is not none else 'false' }}"
     then:
       - action: text.set_value
         metadata: {}
         target:
-          entity_id: "{{ text }}"
+          entity_id: "{{ text_br }}"
         data:
           value: "{{ url }}"
       - action: switch.turn_on
         metadata: {}
         target:
-          entity_id: "{{ switch }}"
+          entity_id: "{{ switch_br }}"
         data: {} 
   - set_conversation_response: "{{ weather_summary }}"

@@ -242,27 +242,24 @@ action:
       name: !input listname
       url: !input html
       display: !input display
-      item: "{{ trigger.slots.item | default('')|capitalize }}"
-      sat: >
-            {{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and
-            trigger.satellite_id is not none and '.' in trigger.satellite_id else ['',
-            ''] }}
-      switch: switch.{{sat[1]}}_browser_display
-      text: text.{{sat[1]}}_remote_browser_url
+      entity: "{{trigger.satellite_id}}"
+      device: "{{ device_name(entity)}}"
+      switch_br: "switch.{{ device }}_browser_display"
+      text_br: "text.{{ device }}_browser_url"
   - if:
       - condition: template
-        value_template: "{{ 'true' if display and sat[1] else 'false' }}"
+        value_template: "{{ 'true' if display and entity is not none else 'false' }}"
     then:
       - action: text.set_value
         metadata: {}
         target:
-          entity_id: "{{text}}"
+          entity_id: "{{text_br}}"
         data:
           value: "{{url}}"
       - action: switch.turn_on
         metadata: {}
         target:
-          entity_id: "{{switch}}"
+          entity_id: "{{switch_br}}"
         data: {} 
   - choose:
       - conditions:

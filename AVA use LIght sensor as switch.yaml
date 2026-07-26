@@ -1,0 +1,85 @@
+blueprint:
+  name: "AVA light sensor trigger panel" 
+  author: "Lone baggie"
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+     ###  Use AVA light sensor to display html screen.
+     
+     
+         
+  domain: automation
+  input:
+   light_sensor:
+    name: "Light SEnsor"
+    description: "Select your portal light sensor."
+    selector:
+      entity:
+       integration: esphome
+       domain: sensor
+       device_class: illuminance
+       multiple: true
+   html:
+    name: HTML display
+    description: Enter URL of page to display on device. 
+    default: http://192.168.0.254:8123/local/button.html
+    selector:
+      text:
+   text_helper:
+    name: Input text help
+    description: Input text helper to hold device name (used for panel automation)
+    selector:
+      entity:
+       domain: input_text
+ 
+     
+     
+
+# Run instances in parallel so multiple portals going idle simultaneously don't block each other
+mode: parallel
+max: 10
+triggers:
+
+ - trigger: illuminance.crossed_threshold
+   target:
+     entity_id: !input light_sensor
+   options:
+       behavior: each
+       for: "00:00:00"
+       threshold:
+         type: below
+         value:
+           active_choice: number
+           number: 20
+  
+
+action:
+
+  # Extract our environment variables cleanly right up front based on the native trigger context
+  - variables:
+      light_sensor: "{{ trigger.entity_id }}"
+      url: !input html
+      device_id: "{{ light_sensor | replace('sensor.', '') }}"
+      device: "{{ device_id | replace('_light_sensor', '') }}"
+      switch: "switch.{{ device }}_screensaver_display"
+      text: "text.{{ device }}_browser_url"
+      input_text: !input text_helper
+  - action: text.set_value
+    metadata: {}
+    target:
+      entity_id: "{{text}}"
+    data:
+      value: "{{url}}"
+
+  - action: switch.turn_on
+    metadata: {}
+    target:
+      entity_id: "{{switch}}"
+    data: {} 
+  - action: input_text.set_value
+    metadata: {}
+    target:
+     entity_id: "{{input_text}}"
+    data:
+     value: "{{device}}"
+

@@ -50,6 +50,13 @@ blueprint:
             entity:
               filter:
                 - domain: media_player
+        volume_bug:
+          name: Low volume bug
+          description: Turn this on if you suffer low volume on first play
+          default: false
+          selector:
+            boolean:
+        
 
     # --- Collapsible Artist Section ---
     artist_options:
@@ -275,11 +282,12 @@ condition: []
 
 action:
   - variables:
+      volume_bug: !input volume_bug
       sat: "{{trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', '']}}"
       default: !input default_speaker
       remote: !input remote_speaker
       spoken_sentence: "{{ trigger.sentence | default('', true) | lower }}"
-      
+      reset: "button.{{sat[1]}}_restart_service"
       # Determine base local/satellite target
       base_speaker: >
         {% if sat | length > 1 and sat[1] != "" %}
@@ -408,3 +416,12 @@ action:
               album: "{{ album }}"
               enqueue: play
               media_type: "{{ media_type }}"
+  - if:
+      - condition: template
+        value_template: "{{volume_bug}}"
+    then:
+      - action: button.press
+        metadata: {}
+        target:
+          entity_id: "{{reset}}"
+        data: {}
