@@ -19,6 +19,7 @@ For example, if the AVA device is called **'portal':**
 | Device name | entity name |
 | :---- | :---- |
 | Physical volume | sensor.portal_physical_volume |
+| Assist satellite| assist_satellite.portal |
 | Browser Display | switch.portal_browser_display |
 | Media Player | media_player.portal |
 
