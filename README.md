@@ -1,8 +1,8 @@
 # Home Assistant Blueprints for Ava Pro
 
-Welcome to my Home Assistant blueprints repository\!
+Welcome to my Home Assistant blueprints repository!
 
-The following custom Home Assistant blueprints have been created for [Ava Pro](https://github.com/knoop7/Ava)  Android voice assistant (check out the [Ava Wiki](https://github.com/knoop7/Ava/wiki) for hardware details and configuration).
+The following custom Home Assistant blueprints have been created for [Ava Pro](https://github.com/knoop7/Ava) Android voice assistant (check out the [Ava Wiki](https://github.com/knoop7/Ava/wiki) for hardware details and configuration).
 
 These blueprints add the missing functionality found in commercial systems, such as music control, alarms, TODO lists and weather reports, without needing to write complex Jinja2 templates or YAML automations from scratch.
 
@@ -12,15 +12,15 @@ Alarms are provided via a separate integration, [Voice Alarms](https://github.co
 
 ##### Note
 
-All these blueprints rely on the fact the default naming convention is unchanged on the AVA devices. It must be in the format **domain.device name\_entity name** . For Music Assistant playback, the native media player must be disabled in settings.
+All these blueprints rely on the fact the default naming convention is unchanged on the AVA devices. It must be in the format **domain.device name_entity name** . For Music Assistant playback, the native media player must be disabled in settings.
 
 For example, if the AVA device is called **'portal':**
 
 | Device name | entity name |
 | :---- | :---- |
-| Physical volume | sensor.portal\_physical\_volume |
-| Browser Display | switch.portal\_browser\_display |
-| Media Player | media\_player.portal |
+| Physical volume | sensor.portal_physical_volume |
+| Browser Display | switch.portal_browser_display |
+| Media Player | media_player.portal |
 
 ---
 
@@ -28,16 +28,16 @@ For example, if the AVA device is called **'portal':**
 
 | Blueprint | Category | Description | Quick Import |
 | :---- | :---- | :---- | :---- |
-| [**AVA Display the time**](#1-ava-display-the-time) | Display | Displays a clock html via voice control | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Display%2520the%2520time.yaml) |
-| [**AVA Read Weather forecast**](#2-ava-read-weather-forecast) | Weather / Voice | Read daily  weather forecast, temperature and rain summaries. | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Read%2520Weather%2520forecast.yaml) |
-| [**AVA Reset when stuck**](#3-ava-reset-when-stuck) | Maintenance | Watchdog blueprint that safely reboots/resets the device if non-responsive. | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Reset%2520when%2520stuck.yaml) |
-| [**AVA Screen Manager**](#4-ava-screen-manager) | Display | Controls the AVA display screen savers and active browser display. | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Screen%2520Manager.yaml) |
-| [**AVA Sync Volume Manager**](#5-ava-sync-volume-manager) | Media | Synchronises music assistant media volume with physical volume | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Sync%2520Volume%2520Manager.yaml) |
-| [**AVA Todo**](#6-ava-todo) | Utility | Displays and interacts with Home Assistant `todo` list items. | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Todo.yaml) |
-| [**AVA Turn on screensaver**](#7-ava-turn-on-screensaver) | Display | Triggers screensaver mode via voice control | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Turn%2520on%2520screensaver.yaml) |
-| [**AVA display alarm**](#8-ava-display-alarm) | Alarm / Utility | Shows active alarm information on-screen. | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520display%2520alarm.yaml) |
-| [**AVA music assistant**](#9-ava-music-assistant) | Media | Deep integration with Music Assistant (MASS) for playback & navigation. | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520music%2520assistant.yaml) |
-| [**Auto ducking volume**](#10-auto-ducking-volume) | Audio / Media | Automatically lowers volume on devices in the same area. | [Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAuto%2520ducking%2520volume.yaml) |
+| [**AVA Display the time**](#1-ava-display-the-time) | Display | Displays a clock html via voice control | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Display%2520the%2520time.yaml) |
+| [**AVA Read Weather forecast**](#2-ava-read-weather-forecast) | Weather / Voice | Read daily weather forecast, temperature and rain summaries. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Read%2520Weather%2520forecast.yaml) |
+| [**AVA Reset when stuck**](#3-ava-reset-when-stuck) | Maintenance | Watchdog blueprint that safely reboots/resets the device if non-responsive. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Reset%2520when%2520stuck.yaml) |
+| [**AVA Screen Manager**](#4-ava-screen-manager) | Display | Controls the AVA display screen savers and active browser display. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Screen%2520Manager.yaml) |
+| [**AVA Sync Volume Manager**](#5-ava-sync-volume-manager) | Media | Synchronises music assistant media volume with physical volume | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Sync%2520Volume%2520Manager.yaml) |
+| [**AVA Todo**](#6-ava-todo) | Utility | Displays and interacts with Home Assistant `todo` list items. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Todo.yaml) |
+| [**AVA Turn on screensaver**](#7-ava-turn-on-screensaver) | Display | Triggers screensaver mode via voice control | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Turn%2520on%2520screensaver.yaml) |
+| [**AVA display alarm**](#8-ava-display-alarm) | Alarm / Utility | Shows active alarm information on-screen. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520display%2520alarm.yaml) |
+| [**AVA music assistant**](#9-ava-music-assistant) | Media | Deep integration with Music Assistant (MASS) for playback & navigation. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520music%2520assistant.yaml) |
+| [**Auto ducking volume**](#10-auto-ducking-volume) | Audio / Media | Automatically lowers volume on devices in the same area. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAuto%2520ducking%2520volume.yaml) |
 
 ---
 
@@ -45,9 +45,9 @@ For example, if the AVA device is called **'portal':**
 
 ---
 
-### 1\. AVA Display the time
+### 1. AVA Display the time
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Display%2520the%2520time.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Display%2520the%2520time.yaml)
 
 **File Path:** `AVA Display the time.yaml`
 
@@ -57,9 +57,9 @@ Displays the HTML page via voice control.
 
 ---
 
-### 2\. AVA Read Weather forecast
+### 2. AVA Read Weather forecast
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Read%2520Weather%2520forecast.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Read%2520Weather%2520forecast.yaml)
 
 **File Path:** `AVA Read Weather forecast.yaml`
 
@@ -74,9 +74,9 @@ Pulls daily forecast data from your Home Assistant weather entity and formats it
 
 ---
 
-### 3\. AVA Reset when stuck
+### 3. AVA Reset when stuck
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Reset%2520when%2520stuck.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Reset%2520when%2520stuck.yaml)
 
 **File Path:** `AVA Reset when stuck.yaml`
 
@@ -91,9 +91,9 @@ A lightweight watchdog automation that monitors connectivity and state updates f
 
 ---
 
-### 4\. AVA Screen Manager
+### 4. AVA Screen Manager
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Screen%2520Manager.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Screen%2520Manager.yaml)
 
 **File Path:** `AVA Screen Manager.yaml`
 
@@ -103,9 +103,9 @@ Manages browser timeout delays and screensaver
 
 ---
 
-### 5\. AVA Sync Volume Manager
+### 5. AVA Sync Volume Manager
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Sync%2520Volume%2520Manager.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Sync%2520Volume%2520Manager.yaml)
 
 **File Path:** `AVA Sync Volume Manager.yaml`
 
@@ -119,9 +119,9 @@ Ensures physical volumes are synced to the Music Assistant mediaplayer before mu
 
 ---
 
-### 6\. AVA Todo
+### 6. AVA Todo
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Todo.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Todo.yaml)
 
 **File Path:** `AVA Todo.yaml`
 
@@ -137,9 +137,9 @@ Home Assistant `to do` list management. Can also display list on screen
 
 ---
 
-### 7\. AVA Turn on screensaver
+### 7. AVA Turn on screensaver
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Turn%2520on%2520screensaver.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Turn%2520on%2520screensaver.yaml)
 
 **File Path:** `AVA Turn on screensaver.yaml`
 
@@ -153,9 +153,9 @@ Home Assistant `to do` list management. Can also display list on screen
 
 ---
 
-### 8\. AVA display alarm
+### 8. AVA display alarm
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520display%2520alarm.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520display%2520alarm.yaml)
 
 **File Path:** `AVA display alarm.yaml`
 
@@ -163,9 +163,11 @@ Home Assistant `to do` list management. Can also display list on screen
 
 Displays upcoming alarm times. Require [voice alarms](https://github.com/lone-baggie/voice_alarms)
 
-### 9\. AVA music assistant
+---
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520music%2520assistant.yaml)
+### 9. AVA music assistant
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520music%2520assistant.yaml)
 
 **File Path:** `AVA music assistant.yaml`
 
@@ -182,9 +184,9 @@ Voice control for **Music Assistant** integration in Home Assistant.
 
 ---
 
-### 10\. Auto ducking volume
+### 10. Auto ducking volume
 
-[Import Blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAuto%2520ducking%2520volume.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAuto%2520ducking%2520volume.yaml)
 
 **File Path:** `Auto ducking volume.yaml`
 
@@ -202,7 +204,7 @@ Click any of the **Import Blueprint** badges above. Home Assistant will open the
 
 ### Option 2: Manual URL Import
 
-1. In Home Assistant, go to **Settings** \-\> **Automations & Scenes** \-\> **Blueprints**.  
+1. In Home Assistant, go to **Settings** -> **Automations & Scenes** -> **Blueprints**.  
 2. Click **Import Blueprint** in the bottom right corner.  
 3. Paste the URL of the file from this repository.  
 4. Click **Import Blueprint**.
@@ -215,7 +217,4 @@ Found a bug or have a suggestion for improving these blueprints? Please open an 
 
 ---
 
-*Created with ❤️ for the Home Assistant Community.*  
-
-
-#
+*Created with ❤️ for the Home Assistant Community.*
