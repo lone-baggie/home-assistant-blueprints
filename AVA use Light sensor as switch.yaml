@@ -60,7 +60,7 @@ action:
       entity: "{{ trigger.entity_id }}"
       url: !input html
       device: "{{ device_name(entity)}}"
-      text_br: "text.{{ device }}_browser_url"
+      text_br: "text.{{ device }}_remote_browser_url"
       input_text: !input text_helper
 
   - action: text.set_value

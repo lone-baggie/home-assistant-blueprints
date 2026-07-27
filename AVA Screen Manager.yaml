@@ -77,10 +77,14 @@ action:
       device: "{{ device_name(entity)}}"
       switch_ss: "switch.{{ device }}_screensaver_display"
       switch_br: "switch.{{ device }}_browser_display"
-      text_br: "text.{{ device }}_browser_url"
+      text_br: "text.{{ device }}_remote_browser_url"
       media_player: "media_player.{{ device }}"
-
+      esphome: "esphome.{{ device }}_webview_command"
       overwrite: !input overwrite
+  - action: "{{ esphome }}"
+    data: 
+      command: "('clearCache':true)"
+
   - choose:
       - conditions:
           - condition: trigger

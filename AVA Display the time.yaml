@@ -63,7 +63,7 @@ action:
       url: !input html
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
-      text_br: "text.{{ device }}_browser_url"
+      text_br: "text.{{ device }}_remote_browser_url"
   - if:
     - condition: template
       value_template: "{{ entity is none}}"

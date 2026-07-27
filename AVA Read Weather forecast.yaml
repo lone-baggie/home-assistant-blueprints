@@ -154,7 +154,7 @@ blueprint:
           description: Master template utilizing {greeting} and time-of-day brackets.
           default: >-
             {greeting}, [m:in {location}, it is currently {current_temp} degrees and looking {condition}. Expect a high of {high} and a low of {low}, with a {rain_chance} percent chance of rain.]
-            [a:things are currently sitting at {current_temp} degrees with {condition}. We are heading for a high of {high}, dropping to {low} later tonight.]
+            [a:things are currently sitting at {current_temp} degrees. The weather is  {condition}. We are heading for a high of {high}, dropping to {low} later tonight.]
             [e:it's currently {current_temp} degrees and {condition}. Overnight, we can expect a low of {low}, with a {rain_chance} percent chance of rain.]
           selector:
             text:
@@ -223,7 +223,7 @@ action:
       state_map: !input custom_state_map
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
-      text_br: "text.{{ device }}_browser_url"
+      text_br: "text.{{ device }}_remote_browser_url"
       # Determine current hour, bracket prefix to match, and dynamic greeting text
       current_hour: "{{ now().hour | int }}"
       active_prefix: >-

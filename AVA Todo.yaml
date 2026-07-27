@@ -246,7 +246,7 @@ action:
       item: "{{ trigger.slots.item | default('')|capitalize }}"
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
-      text_br: "text.{{ device }}_browser_url"
+      text_br: "text.{{ device }}_remote_browser_url"
   - if:
       - condition: template
         value_template: "{{ 'true' if display and entity is not none else 'false' }}"
