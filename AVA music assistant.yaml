@@ -305,7 +305,7 @@ action:
       default: !input default_speaker
       remote: !input remote_speaker
       spoken_sentence: "{{ trigger.sentence | default('', true) | lower }}"
-      reset: "button.{{sat[1]}}_restart_service"
+      reset: "button.{{sat[1]}}_just_stop"
       # Determine base local/satellite target
       base_speaker: >
         {% if sat | length > 1 and sat[1] != "" %}

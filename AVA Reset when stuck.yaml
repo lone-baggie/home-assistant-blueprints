@@ -39,16 +39,13 @@ condition: []
 
 action:
   - variables:
-      # trigger.entity_id returns the single entity that actually fired the trigger
-      # (e.g., 'assist_satellite.portalmini_black')
-      sat_name: "{{ trigger.entity_id.split('.')[1] }}"
-      
-      # Construct the corresponding restart button ID dynamically
-      reset_button: "button.{{ sat_name }}_restart_service"
+      entity: "{{trigger.entity_id}}"
+      device: "{{ device_name(entity)}}"
+      stop: "button.{{ device }}_just_stop"
       
   - action: button.press
     target:
-      entity_id: "{{ reset_button }}"
+      entity_id: "{{ stop }}"
 
   - delay:
       seconds: 10
