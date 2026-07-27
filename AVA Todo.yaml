@@ -242,6 +242,7 @@ action:
       name: !input listname
       url: !input html
       display: !input display
+      item: "{{ trigger.slots.item | default('')|capitalize }}"
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
       switch_br: "switch.{{ device }}_browser_display"
@@ -310,12 +311,29 @@ action:
           - condition: template
             value_template: "{{ trigger.id in ['removetodo'] }}"
         sequence:
-          - action: todo.remove_item
-            data:
-              item: "{{item}}"
+          - action: todo.get_items
             target:
               entity_id: "{{todo}}"
-          - set_conversation_response: "{{item }} removed from {{name}}"
+            data:
+              status: needs_action
+            response_variable: current_list
+          - variables:
+              existing_items: >-
+                {{ current_list[todo]['items'] | map(attribute='summary') | map('lower') | list }}
+              item_exists: >-
+                {{ item | lower in existing_items }}
+          - if:
+              - condition: template
+                value_template: "{{ item_exists }}"
+            then:
+              - action: todo.remove_item
+                data:
+                  item: "{{item}}"
+                target:
+                  entity_id: "{{todo}}"
+              - set_conversation_response: "{{item}} removed from {{name}}"
+            else:
+              - set_conversation_response: "{{item}} is not on your {{name}}"
       - conditions:
           - condition: template
             value_template: "{{ trigger.id in ['deletetodo'] }}"
