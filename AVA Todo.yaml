@@ -92,6 +92,7 @@ blueprint:
           * <b>{items}</b> = The dynamically formatted list of items (e.g., "apples, milk, and bread").
           * <b>{count}</b> = The total number of items currently on your list.
           * <b>{name}</b> = Name of the list.
+          * <b>items </b>  = Items will be auto-corrected to item if count is 1
         </details>
       input:
         shopping_text_template:
@@ -245,7 +246,6 @@ action:
       item: "{{ trigger.slots.item | default('')|capitalize }}"
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
-      switch_br: "switch.{{ device }}_browser_display"
       text_br: "text.{{ device }}_browser_url"
   - if:
       - condition: template
@@ -257,11 +257,6 @@ action:
           entity_id: "{{text_br}}"
         data:
           value: "{{url}}"
-      - action: switch.turn_on
-        metadata: {}
-        target:
-          entity_id: "{{switch_br}}"
-        data: {} 
   - choose:
       - conditions:
           - condition: template
@@ -287,7 +282,13 @@ action:
                     none
                   {% endif %}
                 final_speech: >-
-                    {% if item_count > 0 %}
+                    {% if item_count == 1 %}
+                      {{ raw_text_template 
+                        | replace('{count}', item_count)
+                        | replace('{items}', formatted_items)
+                        | replace('{name}', name)
+                        | replace('items','item') }}
+                    {% elif item_count > 1 %}
                       {{ raw_text_template 
                         | replace('{count}', item_count)
                         | replace('{items}', formatted_items)

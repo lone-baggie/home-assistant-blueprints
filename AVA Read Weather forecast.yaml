@@ -223,11 +223,7 @@ action:
       state_map: !input custom_state_map
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
-      switch_ss: "switch.{{ device }}_screensaver_display"
-      switch_br: "switch.{{ device }}_browser_display"
       text_br: "text.{{ device }}_browser_url"
-      media_player: "media_player.{{ device }}"
-      
       # Determine current hour, bracket prefix to match, and dynamic greeting text
       current_hour: "{{ now().hour | int }}"
       active_prefix: >-
@@ -409,9 +405,4 @@ action:
           entity_id: "{{ text_br }}"
         data:
           value: "{{ url }}"
-      - action: switch.turn_on
-        metadata: {}
-        target:
-          entity_id: "{{ switch_br }}"
-        data: {} 
   - set_conversation_response: "{{ weather_summary }}"

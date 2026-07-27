@@ -57,25 +57,19 @@ action:
 
   # Extract our environment variables cleanly right up front based on the native trigger context
   - variables:
-      light_sensor: "{{ trigger.entity_id }}"
+      entity: "{{ trigger.entity_id }}"
       url: !input html
-      device_id: "{{ light_sensor | replace('sensor.', '') }}"
-      device: "{{ device_id | replace('_light_sensor', '') }}"
-      switch: "switch.{{ device }}_screensaver_display"
-      text: "text.{{ device }}_browser_url"
+      device: "{{ device_name(entity)}}"
+      text_br: "text.{{ device }}_browser_url"
       input_text: !input text_helper
+
   - action: text.set_value
     metadata: {}
     target:
-      entity_id: "{{text}}"
+      entity_id: "{{text_br}}"
     data:
       value: "{{url}}"
 
-  - action: switch.turn_on
-    metadata: {}
-    target:
-      entity_id: "{{switch}}"
-    data: {} 
   - action: input_text.set_value
     metadata: {}
     target:

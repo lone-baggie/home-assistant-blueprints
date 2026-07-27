@@ -193,20 +193,36 @@ blueprint:
           default: "(previous track|previous song|back|go back) [on remote speaker]"
           selector:
             text:
-        volume_up_sentence:
-          name: Volume Up Phrase
+        volume_up_sentence1:
+          name: Primary Volume Up Phrase
           description: >
             Phrase used to turn up the volume.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(volume up|louder|turn it up|crank it up|raise the volume) [on remote speaker]"
+          default: "(louder|turn it up|crank it up|raise the volume) [on remote speaker]"
           selector:
             text:
-        volume_down_sentence:
-          name: Volume Down Phrase
+        volume_up_sentence2:
+          name: Secondary Volume Up Phrase
+          description: >
+            Phrase used to turn up the volume.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "volume up [on remote speaker]"
+          selector:
+            text:
+        volume_down_sentence1:
+          name: Primary Volume Down Phrase
           description: >
             Phrase used to lower the volume.
             <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(volume down|quieter|turn it down|lower the volume) [on remote speaker]"
+          default: "(quieter|turn it down|lower the volume) [on remote speaker]"
+          selector:
+            text:
+        volume_down_sentence2:
+          name: Secondary Volume Down Phrase
+          description: >
+            Phrase used to lower the volume.
+            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          default: "volume down [on remote speaker]"
           selector:
             text:
         stop_sentence:
@@ -263,11 +279,13 @@ trigger:
     id: media_previous
   - trigger: conversation
     command:
-      - !input volume_up_sentence
+      - !input volume_up_sentence1
+      - !input volume_up_sentence2
     id: volume_up
   - trigger: conversation
     command:
-      - !input volume_down_sentence
+      - !input volume_down_sentence1
+      - !input volume_down_sentence2
     id: volume_down
   - trigger: conversation
     command:
