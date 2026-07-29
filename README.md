@@ -19,7 +19,6 @@ For example, if the AVA device is called **'portal':**
 | Device name | entity name |
 | :---- | :---- |
 | Physical volume | sensor.portal_physical_volume |
-| Assist satellite| assist_satellite.portal |
 | Browser Display | switch.portal_browser_display |
 | Media Player | media_player.portal |
 
@@ -35,10 +34,12 @@ For example, if the AVA device is called **'portal':**
 | [**AVA Screen Manager**](#4-ava-screen-manager) | Display | Controls the AVA display screen savers and active browser display. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Screen%2520Manager.yaml) |
 | [**AVA Sync Volume Manager**](#5-ava-sync-volume-manager) | Media | Synchronises music assistant media volume with physical volume | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Sync%2520Volume%2520Manager.yaml) |
 | [**AVA Todo**](#6-ava-todo) | Utility | Displays and interacts with Home Assistant `todo` list items. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Todo.yaml) |
-| [**AVA Turn on screensaver**](#7-ava-turn-on-screensaver) | Display | Triggers screensaver mode via voice control | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Turn%2520on%2520screensaver.yaml) |
-| [**AVA display alarm**](#8-ava-display-alarm) | Alarm / Utility | Shows active alarm information on-screen. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520display%2520alarm.yaml) |
-| [**AVA music assistant**](#9-ava-music-assistant) | Media | Deep integration with Music Assistant (MASS) for playback & navigation. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520music%2520assistant.yaml) |
-| [**Auto ducking volume**](#10-auto-ducking-volume) | Audio / Media | Automatically lowers volume on devices in the same area. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAuto%2520ducking%2520volume.yaml) |
+| [**AVA Touch Trigger html**](#7-ava-touch-trigger-html) | Display / Utility | Triggers HTML display actions via touch events on AVA device. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Touch%2520Trigger%2520html.yaml) |
+| [**AVA Turn on screensaver**](#8-ava-turn-on-screensaver) | Display | Triggers screensaver mode via voice control | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Turn%2520on%2520screensaver.yaml) |
+| [**AVA display alarm**](#9-ava-display-alarm) | Alarm / Utility | Shows active alarm information on-screen. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520display%2520alarm.yaml) |
+| [**AVA music assistant**](#10-ava-music-assistant) | Media | Deep integration with Music Assistant (MASS) for playback & navigation. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520music%2520assistant.yaml) |
+| [**Auto ducking volume**](#11-auto-ducking-volume) | Audio / Media | Automatically lowers volume on devices in the same area. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAuto%2520ducking%2520volume.yaml) |
+| [**AVA LLM Music Assistant**](#12-ava-llm-music-assistant) | LLM / Media | LLM-assisted integration for Music Assistant playback and control. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FLLM%2FAVA%2520LLM%2520Music%2520Assistant.yaml) |
 
 ---
 
@@ -138,7 +139,19 @@ Home Assistant `to do` list management. Can also display list on screen
 
 ---
 
-### 7. AVA Turn on screensaver
+### 7. AVA Touch Trigger html
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Touch%2520Trigger%2520html.yaml)
+
+**File Path:** `AVA Touch Trigger html.yaml`
+
+#### Description
+
+Triggers HTML views and display actions when touch events occur on the AVA screen.
+
+---
+
+### 8. AVA Turn on screensaver
 
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Turn%2520on%2520screensaver.yaml)
 
@@ -154,7 +167,7 @@ Home Assistant `to do` list management. Can also display list on screen
 
 ---
 
-### 8. AVA display alarm
+### 9. AVA display alarm
 
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520display%2520alarm.yaml)
 
@@ -166,7 +179,7 @@ Displays upcoming alarm times. Require [voice alarms](https://github.com/lone-ba
 
 ---
 
-### 9. AVA music assistant
+### 10. AVA music assistant
 
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520music%2520assistant.yaml)
 
@@ -185,7 +198,7 @@ Voice control for **Music Assistant** integration in Home Assistant.
 
 ---
 
-### 10. Auto ducking volume
+### 11. Auto ducking volume
 
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAuto%2520ducking%2520volume.yaml)
 
@@ -194,6 +207,18 @@ Voice control for **Music Assistant** integration in Home Assistant.
 #### Description
 
 Automatically dips (ducks) the background audio volume on playing media players in the same area as the AVA device. It also allows another area to be added to allow portable speakers to be included.
+
+---
+
+### 12. AVA LLM Music Assistant
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FLLM%2FAVA%2520LLM%2520Music%2520Assistant.yaml)
+
+**File Path:** `LLM/AVA LLM Music Assistant.yaml`
+
+#### Description
+
+An LLM-assisted version of the AVA Music Assistant blueprint, providing natural language processing for queries and commands related to Music Assistant playback.
 
 ---
 
