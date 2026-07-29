@@ -6,10 +6,8 @@ blueprint:
   description: >
     ### 🗣 AVA LLM Voice Control for Music Assistant
     
-    Control music assistant via AVA voice assistants. This blueprint relies on the music assistant
-    media players having the same name as the AVA device (so media_player.xxx matches device xxx). 
-    Includes remote speaker routing with fallback error checks if the remote entity or input is missing,
-    plus customizable relative volume steps!
+    Control music assistant via AVA voice assistants. Supports playing media by 
+    specifying explicit speaker names, room areas, or a dedicated remote speaker!
   domain: automation
   input:
     ai_task_target:
@@ -21,6 +19,12 @@ blueprint:
     fallback_speaker:
       name: Fallback Media Player
       description: Default Music Assistant player if the request didn't come from a voice satellite.
+      selector:
+        entity:
+          domain: media_player
+    remote_speaker:
+      name: Remote Media Player
+      description: Designated media player used when saying "remote speaker" (great for shifting Bluetooth devices!).
       selector:
         entity:
           domain: media_player
@@ -90,6 +94,7 @@ blueprint:
 
 variables:
   fallback_player_var: !input fallback_speaker
+  remote_player_var: !input remote_speaker
   ai_task_entity_var: !input ai_task_target
   vol_step_input: !input volume_step
 
@@ -118,9 +123,9 @@ trigger:
 
 action:
   - variables:
-      sat: "{{trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', '']}}"
-      target_player: "media_player.{{sat[1]}}"
-      reset: "button.{{sat[1]}}_just_stop"
+      sat: "{{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', ''] }}"
+      satellite_player: "{{ 'media_player.' ~ sat[1] if sat[1] != '' else fallback_player_var }}"
+      satellite_area_id: "{{ area_id(trigger.device_id) if trigger.device_id is defined and trigger.device_id is not none else '' }}"
       calculated_step: "{{ (vol_step_input | default(5, true) | int) / 100 }}"
 
   - choose:
@@ -133,18 +138,14 @@ action:
           - action: ai_task.generate_data
             data:
               entity_id: "{{ ai_task_entity_var }}"
-              task_name: "Parse media play request"
+              task_name: "Parse media play request with optional location"
               instructions: >-
-                Extract the clean media payload from this complete voice command sentence: "{{ raw_command }}".
+                Extract the clean media payload and any target destination from this complete voice command sentence: "{{ raw_command }}".
                 CRITICAL RULES FOR EXTRACTION:
-                - media_id MUST only contain the actual name of the track, artist, album, playlist, or station (e.g., "The Beatles", "movie tunes"). Do NOT include action words like "shuffle", "play", "stream", or "music by" inside media_id.
+                - media_id MUST only contain the actual name of the track, artist, album, playlist, or station (e.g., "The Beatles", "BBC Radio 4"). Do NOT include action words, prepositions like "on" or "in", or speaker names inside media_id.
                 - media_type MUST be strictly one of: track, artist, album, playlist, radio, or podcast.
-                - If the request asks for a talk show, news program, podcast series, or specific episode, media_type must be "podcast".
-                - If the request names a specific song or track (e.g. "Penny Lane"), media_type must be "track".
-                - If a band or artist is mentioned, extract that artist name into the "artist" field. Leave blank or omit if none.
-                - If the request specifies a band, group, or singer as the primary target (e.g. "music by Queen"), media_type should be "artist".
-                - If the request specifies a playlist (e.g. "playlist movie tunes"), media_type must be "playlist".
-                - If the request specifies a decade, era, or genre style (e.g. "music from the 70's", "80s rock", "heavy rock"), media_type must be "playlist".
+                - If searching for an artist whose name contains conjunctions (like "and" or "&"), use standard common spelling (e.g. "Peter, Paul and Mary").
+                - If the request specifies a target speaker name, device name, room, area, or "remote speaker" (e.g., "on remote speaker", "in the kitchen"), extract that specific destination name into the "target_location" field. Otherwise, leave it blank.
                 - If the user uses words like "shuffle", "randomize", or "mix up" anywhere in the command, set the shuffle field to true. Otherwise, set it to false.
                 - Always set enqueue to "replace".
               structure:
@@ -160,6 +161,11 @@ action:
                     text: {}
                 artist:
                   description: "Optional artist name to narrow down searches. Leave empty if not applicable."
+                  required: false
+                  selector:
+                    text: {}
+                target_location:
+                  description: "The requested speaker name, device name, room, area, or 'remote speaker' if specified. Leave blank if none."
                   required: false
                   selector:
                     text: {}
@@ -180,6 +186,51 @@ action:
               clean_artist: "{{ raw_artist | string | trim if raw_artist is not none and raw_artist | string | lower != 'none' else '' }}"
               raw_shuffle: "{{ ai_result.data.shuffle | default(false, true) }}"
               clean_shuffle: "{{ true if raw_shuffle | string | lower in ['true', '1', 'yes', 'on'] else false }}"
+              requested_location: "{{ ai_result.data.target_location | default('', true) | string | lower | trim }}"
+              
+              # Target player resolution: checks for explicit remote keyword first, then falls back to your robust area/name lookup
+              target_player: >
+                {% set loc = requested_location %}
+                {% if loc != '' and loc != 'none' %}
+                  {% if 'remote' in loc %}
+                    {{ remote_player_var }}
+                  {% else %}
+                    {% set ns = namespace(found='') %}
+                    {% set keywords = loc.split() | reject('in', ['speaker', 'player', 'the', 'on', 'in']) | list %}
+                    {% if keywords | length == 0 %}
+                      {% set keywords = [loc] %}
+                    {% endif %}
+
+                    {# Step 1: Search media players for keyword match #}
+                    {% for p in states.media_player %}
+                      {% set p_text = (p.entity_id ~ ' ' ~ (p.name | default('')) ~ ' ' ~ (p.attributes.friendly_name | default(''))) | lower %}
+                      {% for kw in keywords %}
+                        {% if kw in p_text and ns.found == '' %}
+                          {% set ns.found = p.entity_id %}
+                        {% endif %}
+                      {% endfor %}
+                    {% endfor %}
+                    
+                    {# Step 2: If no media player matched, check areas #}
+                    {% if ns.found == '' %}
+                      {% for a in areas() %}
+                        {% for kw in keywords %}
+                          {% if kw in a.lower() and ns.found == '' %}
+                            {% set area_players = area_entities(a) | select('match', 'media_player.') | list %}
+                            {% if area_players | length > 0 %}
+                              {% set ns.found = area_players[0] %}
+                            {% endif %}
+                          {% endif %}
+                        {% endfor %}
+                      {% endfor %}
+                    {% endif %}
+
+                    {{ ns.found if ns.found != '' else satellite_player }}
+                  {% endif %}
+                {% else %}
+                  {{ satellite_player }}
+                {% endif %}
+
               final_payload: >
                 {% set base = {
                   "media_id": ai_result.data.media_id,
@@ -191,7 +242,6 @@ action:
                 {% else %}
                   {{ base }}
                 {% endif %}
-
 
           - action: media_player.shuffle_set
             target:
@@ -210,7 +260,7 @@ action:
         sequence:
           - action: media_player.media_stop
             target:
-              entity_id: "{{ target_player }}"
+              entity_id: "{{ satellite_player }}"
 
       - conditions:
           - condition: trigger
@@ -218,7 +268,7 @@ action:
         sequence:
           - action: media_player.media_next_track
             target:
-              entity_id: "{{ target_player }}"
+              entity_id: "{{ satellite_player }}"
 
       - conditions:
           - condition: trigger
@@ -226,7 +276,7 @@ action:
         sequence:
           - action: media_player.media_previous_track
             target:
-              entity_id: "{{ target_player }}"
+              entity_id: "{{ satellite_player }}"
 
       - conditions:
           - condition: trigger
@@ -234,7 +284,7 @@ action:
         sequence:
           - action: media_player.volume_set
             target:
-              entity_id: "{{ target_player }}"
+              entity_id: "{{ satellite_player }}"
             data:
               volume_level: >
                 {% set vol = trigger.slots.volume_level | default(50) | int %}
@@ -246,10 +296,10 @@ action:
         sequence:
           - action: media_player.volume_set
             target:
-              entity_id: "{{ target_player }}"
+              entity_id: "{{ satellite_player }}"
             data:
               volume_level: >
-                {% set current = state_attr(target_player, 'volume_level') | default(0.3, true) | float %}
+                {% set current = state_attr(satellite_player, 'volume_level') | default(0.3, true) | float %}
                 {{ [current + calculated_step, 1.0] | min }}
 
       - conditions:
@@ -258,14 +308,10 @@ action:
         sequence:
           - action: media_player.volume_set
             target:
-              entity_id: "{{ target_player }}"
+              entity_id: "{{ satellite_player }}"
             data:
               volume_level: >
-                {% set current = state_attr(target_player, 'volume_level') | default(0.3, true) | float %}
+                {% set current = state_attr(satellite_player, 'volume_level') | default(0.3, true) | float %}
                 {{ [current - calculated_step, 0.0] | max }}
-  - action: button.press
-    metadata: {}
-    target:
-      entity_id: "{{reset}}"
-    data: {}
+
 mode: single
