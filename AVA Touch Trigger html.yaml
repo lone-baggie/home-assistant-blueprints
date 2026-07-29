@@ -1,0 +1,87 @@
+blueprint:
+  name: "AVA Touch trigger html" 
+  author: "Lone baggie"
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### Use AVA touch to display HTML screen.
+    Includes a cooldown timer to prevent accidental double-triggers.
+      
+  domain: automation
+  input:
+    touch_sensor:
+      name: Touch Sensor
+      description: Select your touch sensor.
+      selector:
+        entity:
+          integration: esphome
+          domain: sensor
+          multiple: true
+    html:
+      name: HTML display
+      description: Enter URL of page to display on device. 
+      default: http://192.168.0.254:8123/local/button.html
+      selector:
+        text:
+    text_helper:
+      name: Input text help
+      description: Input text helper to hold device name (used for panel automation)
+      selector:
+        entity:
+          domain: input_text
+    cooldown:
+      name: Cooldown Period
+      description: Ignore repeat triggers within this many seconds.
+      default: 3
+      selector:
+        number:
+          min: 0
+          max: 30
+          step: 1
+          unit_of_measurement: seconds
+
+# Run instances in parallel so multiple portals going idle simultaneously don't block each other
+mode: parallel
+max: 10
+
+triggers:
+  - trigger: state
+    entity_id: !input touch_sensor
+
+# Declare root-level variables so the condition can see them immediately
+variables:
+  cooldown_sec: !input cooldown
+
+condition:
+  - condition: template
+    value_template: >
+      {% set cd = cooldown_sec | float(3) %}
+      {% set last_run = this.attributes.last_triggered | default(none) %}
+      {% if last_run is none %}
+        true
+      {% else %}
+        {{ (now() - last_run).total_seconds() > cd }}
+      {% endif %}
+
+action:
+  # Map remaining runtime variables
+  - variables:
+      entity: "{{ trigger.entity_id }}"
+      url: !input html
+      device: "{{ device_name(entity) }}"
+      text_br: "text.{{ device }}_remote_browser_url"
+      input_text: !input text_helper
+
+  - action: text.set_value
+    metadata: {}
+    target:
+      entity_id: "{{ text_br }}"
+    data:
+      value: "{{ url }}"
+
+  - action: input_text.set_value
+    metadata: {}
+    target:
+      entity_id: "{{ input_text }}"
+    data:
+      value: "{{ device }}"

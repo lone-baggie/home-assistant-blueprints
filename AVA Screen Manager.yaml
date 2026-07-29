@@ -10,6 +10,13 @@ blueprint:
          
   domain: automation
   input:
+    assist_satellites:
+     name: "Assist Satellites"
+     description: "Select your AVA satelittes."
+     selector:
+       entity:
+         domain: assist_satellite
+         multiple: true
     portal_switches:
       name: "Portal Browser Switches"
       description: "Select your portal browser display switches."
@@ -67,6 +74,22 @@ trigger:
       hours: 0
       minutes: 0
       seconds: 5
+  - platform: assist_satellite.listening
+    id: listen
+    target:
+      entity_id: !input assist_satellites
+    options:
+      for: "00:00:00"
+  - platform: assist_satellite.idle
+    id: idle
+    target:
+      entity_id: !input assist_satellites
+    options:
+     for:
+       hours: 0
+       minutes: 0
+       seconds: !input idle_seconds
+
 condition: []
 
 action:
@@ -90,6 +113,7 @@ action:
           - condition: trigger
             id:
               - delay
+              - idle
         sequence:
           - action: text.set_value
             data:
@@ -129,3 +153,18 @@ action:
             target:
               entity_id: "{{ switch_ss }}"
             data: {}
+      - conditions:
+          - condition: trigger
+            id:
+              - listen
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: "{{ switch_ss }}"
+            data: {}
+          - delay:
+             hours: 0
+             minutes: 0
+             seconds: 1
+             milliseconds: 0      
+ 

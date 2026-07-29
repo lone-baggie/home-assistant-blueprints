@@ -1,0 +1,271 @@
+blueprint:
+  name: "AVA LLM Music Assistant"
+  author: Lonebaggie 
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🗣 AVA LLM Voice Control for Music Assistant
+    
+    Control music assistant via AVA voice assistants. This blueprint relies on the music assistant
+    media players having the same name as the AVA device (so media_player.xxx matches device xxx). 
+    Includes remote speaker routing with fallback error checks if the remote entity or input is missing,
+    plus customizable relative volume steps!
+  domain: automation
+  input:
+    ai_task_target:
+      name: AI Task Entity
+      description: The AI Task entity provided by your local LLM integration (e.g., ai_task.ollama_ai_task).
+      selector:
+        entity:
+          domain: ai_task
+    fallback_speaker:
+      name: Fallback Media Player
+      description: Default Music Assistant player if the request didn't come from a voice satellite.
+      selector:
+        entity:
+          domain: media_player
+    volume_step:
+      name: Volume Step Percentage
+      description: The percentage amount to increase or decrease volume by when saying volume up/down or giving relative shifts.
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 50
+          step: 1
+          unit_of_measurement: "%"
+
+    voice_phrases:
+      name: Voice Command Phrases
+      icon: mdi:microphone-settings
+      description: Customize the trigger sentences Assist listens for.
+      collapsed: true
+      input:
+        voice_play_phrase:
+          name: Play Command Phrases
+          description: List of sentence patterns Assist listens for when playing media.
+          default:
+            - "play {query}"
+            - "stream {query}"
+            - "shuffle {query}"
+            - "music by {query}"
+          selector:
+            object: {}
+        voice_stop_phrase:
+          name: Stop / Pause Phrase
+          description: The sentence pattern for stopping or pausing.
+          default: "stop [the] (music|radio|song)"
+          selector:
+            text: {}
+        voice_next_phrase:
+          name: Next Track Phrase
+          description: The sentence pattern for skipping forward.
+          default: "next track"
+          selector:
+            text: {}
+        voice_prev_phrase:
+          name: Previous Track Phrase
+          description: The sentence pattern for going back.
+          default: "previous track"
+          selector:
+            text: {}
+        voice_volume_phrase:
+          name: Volume Control Phrase
+          description: The sentence pattern for setting specific volume levels.
+          default: "set volume [to] {volume_level}"
+          selector:
+            text: {}
+        voice_vol_up_phrase:
+          name: Volume Up Phrase
+          description: The sentence pattern for turning volume up.
+          default: "turn up [the] volume"
+          selector:
+            text: {}
+        voice_vol_down_phrase:
+          name: Volume Down Phrase
+          description: The sentence pattern for turning volume down.
+          default: "turn down [the] volume"
+          selector:
+            text: {}
+
+variables:
+  fallback_player_var: !input fallback_speaker
+  ai_task_entity_var: !input ai_task_target
+  vol_step_input: !input volume_step
+
+trigger:
+  - platform: conversation
+    command: !input voice_play_phrase
+    id: "play_media"
+  - platform: conversation
+    command: !input voice_stop_phrase
+    id: "stop_media"
+  - platform: conversation
+    command: !input voice_next_phrase
+    id: "next_track"
+  - platform: conversation
+    command: !input voice_prev_phrase
+    id: "prev_track"
+  - platform: conversation
+    command: !input voice_volume_phrase
+    id: "set_volume"
+  - platform: conversation
+    command: !input voice_vol_up_phrase
+    id: "volume_up"
+  - platform: conversation
+    command: !input voice_vol_down_phrase
+    id: "volume_down"
+
+action:
+  - variables:
+      sat: "{{trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', '']}}"
+      target_player: "media_player.{{sat[1]}}"
+      reset: "button.{{sat[1]}}_just_stop"
+      calculated_step: "{{ (vol_step_input | default(5, true) | int) / 100 }}"
+
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: "play_media"
+        sequence:
+          - variables:
+              raw_command: "{{ trigger.sentence | default(trigger.slots.query, true) }}"
+          - action: ai_task.generate_data
+            data:
+              entity_id: "{{ ai_task_entity_var }}"
+              task_name: "Parse media play request"
+              instructions: >-
+                Extract the clean media payload from this complete voice command sentence: "{{ raw_command }}".
+                CRITICAL RULES FOR EXTRACTION:
+                - media_id MUST only contain the actual name of the track, artist, album, playlist, or station (e.g., "The Beatles", "movie tunes"). Do NOT include action words like "shuffle", "play", "stream", or "music by" inside media_id.
+                - media_type MUST be strictly one of: track, artist, album, playlist, radio, or podcast.
+                - If the request asks for a talk show, news program, podcast series, or specific episode, media_type must be "podcast".
+                - If the request names a specific song or track (e.g. "Penny Lane"), media_type must be "track".
+                - If a band or artist is mentioned, extract that artist name into the "artist" field. Leave blank or omit if none.
+                - If the request specifies a band, group, or singer as the primary target (e.g. "music by Queen"), media_type should be "artist".
+                - If the request specifies a playlist (e.g. "playlist movie tunes"), media_type must be "playlist".
+                - If the request specifies a decade, era, or genre style (e.g. "music from the 70's", "80s rock", "heavy rock"), media_type must be "playlist".
+                - If the user uses words like "shuffle", "randomize", or "mix up" anywhere in the command, set the shuffle field to true. Otherwise, set it to false.
+                - Always set enqueue to "replace".
+              structure:
+                media_id:
+                  description: "The clean name of the track, artist, album, playlist, station, or podcast."
+                  required: true
+                  selector:
+                    text: {}
+                media_type:
+                  description: "Strictly one of: track, artist, album, playlist, radio, or podcast"
+                  required: true
+                  selector:
+                    text: {}
+                artist:
+                  description: "Optional artist name to narrow down searches. Leave empty if not applicable."
+                  required: false
+                  selector:
+                    text: {}
+                shuffle:
+                  description: "Set to true if user asks to shuffle or play randomly, false otherwise"
+                  required: true
+                  selector:
+                    boolean: {}
+                enqueue:
+                  description: "Always set to replace"
+                  required: true
+                  selector:
+                    text: {}
+            response_variable: ai_result
+
+          - variables:
+              raw_artist: "{{ ai_result.data.artist | default('', true) }}"
+              clean_artist: "{{ raw_artist | string | trim if raw_artist is not none and raw_artist | string | lower != 'none' else '' }}"
+              raw_shuffle: "{{ ai_result.data.shuffle | default(false, true) }}"
+              clean_shuffle: "{{ true if raw_shuffle | string | lower in ['true', '1', 'yes', 'on'] else false }}"
+              final_payload: >
+                {% set base = {
+                  "media_id": ai_result.data.media_id,
+                  "media_type": ai_result.data.media_type,
+                  "enqueue": ai_result.data.enqueue | default('replace', true)
+                } %}
+                {% if clean_artist != '' %}
+                  {{ dict(base, artist=clean_artist) }}
+                {% else %}
+                  {{ base }}
+                {% endif %}
+
+
+          - action: media_player.shuffle_set
+            target:
+              entity_id: "{{ target_player }}"
+            data:
+              shuffle: "{{ clean_shuffle }}"
+
+          - action: music_assistant.play_media
+            target:
+              entity_id: "{{ target_player }}"
+            data: "{{ final_payload }}"
+
+      - conditions:
+          - condition: trigger
+            id: "stop_media"
+        sequence:
+          - action: media_player.media_stop
+            target:
+              entity_id: "{{ target_player }}"
+
+      - conditions:
+          - condition: trigger
+            id: "next_track"
+        sequence:
+          - action: media_player.media_next_track
+            target:
+              entity_id: "{{ target_player }}"
+
+      - conditions:
+          - condition: trigger
+            id: "prev_track"
+        sequence:
+          - action: media_player.media_previous_track
+            target:
+              entity_id: "{{ target_player }}"
+
+      - conditions:
+          - condition: trigger
+            id: "set_volume"
+        sequence:
+          - action: media_player.volume_set
+            target:
+              entity_id: "{{ target_player }}"
+            data:
+              volume_level: >
+                {% set vol = trigger.slots.volume_level | default(50) | int %}
+                {{ (vol / 100) if vol > 1 else vol }}
+
+      - conditions:
+          - condition: trigger
+            id: "volume_up"
+        sequence:
+          - action: media_player.volume_set
+            target:
+              entity_id: "{{ target_player }}"
+            data:
+              volume_level: >
+                {% set current = state_attr(target_player, 'volume_level') | default(0.3, true) | float %}
+                {{ [current + calculated_step, 1.0] | min }}
+
+      - conditions:
+          - condition: trigger
+            id: "volume_down"
+        sequence:
+          - action: media_player.volume_set
+            target:
+              entity_id: "{{ target_player }}"
+            data:
+              volume_level: >
+                {% set current = state_attr(target_player, 'volume_level') | default(0.3, true) | float %}
+                {{ [current - calculated_step, 0.0] | max }}
+  - action: button.press
+    metadata: {}
+    target:
+      entity_id: "{{reset}}"
+    data: {}
+mode: single

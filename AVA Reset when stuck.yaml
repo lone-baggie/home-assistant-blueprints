@@ -35,6 +35,7 @@ trigger:
     options:
       for: !input stuck_duration
 
+
 condition: []
 
 action:
@@ -42,7 +43,8 @@ action:
       entity: "{{trigger.entity_id}}"
       device: "{{ device_name(entity)}}"
       stop: "button.{{ device }}_just_stop"
-      
+      media: "media_player.{{device}}"
+ 
   - action: button.press
     target:
       entity_id: "{{ stop }}"
