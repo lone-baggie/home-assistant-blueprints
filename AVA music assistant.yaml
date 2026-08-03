@@ -1,6 +1,6 @@
 blueprint:
-  name: AVA Voice Control for Music Assistant (Optimized)
-  author: Lonebaggie (Optimized Edition)
+  name: AVA Voice Control for Music Assistant 
+  author: Lonebaggie 
   homeassistant:
     min_version: 2024.6.0
   description: >

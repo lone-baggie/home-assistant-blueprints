@@ -48,7 +48,10 @@ action:
       entity_id: "{{ text_br }}"
     data:
       value: " "
-
+  - action: switch.turn_off
+    target:
+      entity_id: "{{ entity }}"
+    data: {}
   - action: switch.turn_on
     target:
       entity_id: "{{ switch_ss }}"

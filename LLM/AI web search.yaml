@@ -1,0 +1,151 @@
+blueprint:
+  name: "🚀 AI Web Search Assistant"
+  author: "Home Assistant AI Integrator"
+  homeassistant:
+    min_version: 2024.6.0
+  description: |
+    ## 🧠 Real-Time Web-Connected Voice AI
+
+    Give your local voice assistant **superpowers**! This blueprint intercepts conversation queries, fetches live web search results from **SearXNG** or **Brave Search**, feeds the context to your local Ollama LLM, and speaks back a concise summary.
+
+    ---
+
+    ### ⚠️ Prerequisites & Requirements
+
+    <details>
+    <summary><b>👉 Click here to reveal the required configuration.yaml setup</b></summary>
+
+    <br>
+
+    You **MUST** define at least one of the following `rest_command` blocks inside your `/config/configuration.yaml` file so Home Assistant can fetch live search results.
+
+    #### Option A: Local SearXNG (Recommended)
+    ```yaml
+    rest_command:
+      searxng_web_search:
+        url: "http://<YOUR_LOCAL_IP>:8080/search?q={{ query | urlencode }}&format=json"
+        method: GET
+        headers:
+          Accept: "application/json"
+    ```
+
+    #### Option B: Brave Search API
+    ```yaml
+    rest_command:
+      brave_web_search:
+        url: "[https://api.search.brave.com/res/v1/web/search?q=](https://api.search.brave.com/res/v1/web/search?q=){{ query | urlencode }}&count=3"
+        method: GET
+        headers:
+          Accept: "application/json"
+          Accept-Encoding: "gzip"
+          X-Subscription-Token: "BSA-YOUR_BRAVE_API_KEY_HERE"
+    ```
+
+    > **Note:** Don't forget to reload your REST commands under **Developer Tools ➔ YAML ➔ RESTful Commands** after saving!
+
+    </details>
+
+    ---
+
+  domain: automation
+  input:
+    search_engine:
+      name: "🔍 Search Engine Provider"
+      description: "Choose between your privacy-first local SearXNG container or the cloud-based Brave Search API."
+      default: "searxng"
+      selector:
+        select:
+          options:
+            - label: "📦 SearXNG (Local Docker Container)"
+              value: "searxng"
+            - label: "🌐 Brave Search (Cloud API)"
+              value: "brave"
+
+    ai_task_entity:
+      name: "🤖 AI Task Entity"
+      description: "Select the LLM AI Task pipeline entity responsible for parsing and summarizing search content."
+      selector:
+        entity:
+          filter:
+            domain: ai_task
+
+mode: single
+
+# Global variables defined before actions for correct scoping
+variables:
+  search_engine_choice: !input search_engine
+
+trigger:
+  - platform: conversation
+    command:
+      - "what {query}"
+      - "where {query}"
+      - "how {query}"
+      - "who {query}"
+      - "why {query}"
+
+condition: []
+
+action:
+  # Step 1: Call the selected search engine REST command using trigger.sentence
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ search_engine_choice == 'brave' }}"
+        sequence:
+          - action: rest_command.brave_web_search
+            data:
+              query: "{{ trigger.sentence }}"
+            response_variable: raw_search_results
+
+    default:
+      - action: rest_command.searxng_web_search
+        data:
+          query: "{{ trigger.sentence }}"
+        response_variable: raw_search_results
+
+  # Step 2: Use Jinja2 to parse JSON and send structured text to your LLM
+  - action: ai_task.generate_data
+    data:
+      entity_id: !input ai_task_entity
+      task_name: "Voice Search Summarization"
+      instructions: >-
+        You are a smart home voice assistant. Summarize the following live web search results 
+        to answer the user's question directly. Keep your response brief, clear, and conversational 
+        (1 to 3 short sentences max). Do not use Markdown, bullet points, or special characters.
+
+        User Question:
+        {{ trigger.sentence }}
+
+        Search Context:
+        {% if raw_search_results is defined and raw_search_results.status == 200 %}
+          {% if search_engine_choice == 'brave' %}
+            {% set results = raw_search_results.content.web.results %}
+            {% if results is defined and results | length > 0 %}
+              {% for result in results %}
+                ---
+                Title: {{ result.title }}
+                Snippet: {{ result.description }}
+              {% endfor %}
+            {% else %}
+              No results returned from Brave Search.
+            {% endif %}
+          {% else %}
+            {% set results = raw_search_results.content.results %}
+            {% if results is defined and results | length > 0 %}
+              {% for result in results[:3] %}
+                ---
+                Title: {{ result.title }}
+                Snippet: {{ result.content }}
+              {% endfor %}
+            {% else %}
+              No results returned from SearXNG.
+            {% endif %}
+          {% endif %}
+        {% else %}
+          The search query failed to fetch remote results.
+        {% endif %}
+    response_variable: ai_summary_output
+
+  # Step 3: Speak back the result
+  - set_conversation_response: "{{ ai_summary_output.data }}"
