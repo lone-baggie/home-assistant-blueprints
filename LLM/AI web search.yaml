@@ -1,12 +1,12 @@
 blueprint:
-  name: "🚀 AI Web Search Assistant"
-  author: "Home Assistant AI Integrator"
+  name: "🚀 AI Web Search "
+  author: "lone baggie"
   homeassistant:
     min_version: 2024.6.0
   description: |
     ## 🧠 Real-Time Web-Connected Voice AI
 
-    Give your local voice assistant **superpowers**! This blueprint intercepts conversation queries, fetches live web search results from **SearXNG** or **Brave Search**, feeds the context to your local Ollama LLM, and speaks back a concise summary.
+    Give your local voice assistant **superpowers**! This blueprint intercepts conversation queries, fetches live web search results from **SearXNG** or **Brave Search**, feeds the context alongside **time, date, and home location** into your local Ollama LLM, and speaks back a concise summary.
 
     ---
 
@@ -83,6 +83,8 @@ trigger:
       - "how {query}"
       - "who {query}"
       - "why {query}"
+      - "when {query}"
+      - "did {query}"
 
 condition: []
 
@@ -104,20 +106,26 @@ action:
           query: "{{ trigger.sentence }}"
         response_variable: raw_search_results
 
-  # Step 2: Use Jinja2 to parse JSON and send structured text to your LLM
+  # Step 2: Use Jinja2 to feed search data, current time/date, and home location to your LLM
   - action: ai_task.generate_data
     data:
       entity_id: !input ai_task_entity
       task_name: "Voice Search Summarization"
       instructions: >-
-        You are a smart home voice assistant. Summarize the following live web search results 
+        You are a smart home voice assistant. Summarize the live web search results 
         to answer the user's question directly. Keep your response brief, clear, and conversational 
         (1 to 3 short sentences max). Do not use Markdown, bullet points, or special characters.
 
-        User Question:
+        ### System Environment Context:
+        - Current Date & Time: {{ now().strftime('%A, %B %d, %Y at %I:%M %p') }}
+        - Timezone: {{ now().tzinfo }}
+        - Home Location: {{ state_attr('zone.home', 'friendly_name') | default('Home') }}
+        - Coordinates: Latitude {{ state_attr('zone.home', 'latitude') }}, Longitude {{ state_attr('zone.home', 'longitude') }}
+
+        ### User Question:
         {{ trigger.sentence }}
 
-        Search Context:
+        ### Search Context:
         {% if raw_search_results is defined and raw_search_results.status == 200 %}
           {% if search_engine_choice == 'brave' %}
             {% set results = raw_search_results.content.web.results %}
