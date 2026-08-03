@@ -68,11 +68,6 @@ action:
       value_template: "{{ entity is none}}"
     then:
       - stop: ""
-  - action: switch.turn_off
-    metadata: {}
-    target:
-      entity_id: "{{switch_ss}}"
-    data: {}
   - action: switch.turn_on
     metadata: {}
     target:

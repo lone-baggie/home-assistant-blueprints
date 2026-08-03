@@ -1,0 +1,62 @@
+blueprint:
+  name: "AVA touch screen"
+  author: Lonebaggie
+  homeassistant:
+    min_version: 2024.6.0
+  description: >
+    ### 🖥️ AVA Touch Screen Display & Screensaver URL Handler
+    
+    Monitors screensaver switches. When any of them turn off and their 
+    respective companion browser display is also off, it automatically pushes 
+    the target URL to your remote browser text entity and updates the satellite text helper!
+  domain: automation
+  input:
+    screensaver_switches:
+      name: Screensaver Switches
+      description: Select one or more screensaver switches to monitor.
+      selector:
+        entity:
+          domain: switch
+          multiple: true
+          filter:
+            - integration: esphome
+              domain: switch
+
+    which_sat:
+      name: Text entity to hold device name
+      description: The text entity to hold the name of voice satellite
+      selector:
+        entity:
+          filter:
+            - domain: input_text
+
+trigger:
+  - platform: state
+    entity_id: !input screensaver_switches
+    from: "on"
+    to: "off"
+condition:
+  - condition: template
+    value_template: >
+      {{ is_state(trigger.entity_id | replace('screensaver_display', 'browser_display'), 'off') }}
+  - condition: template
+    value_template: >
+      {{ is_state(trigger.entity_id | replace('switch', 'assist_satellite')|replace('_screensaver_display',''), 'idle') }}
+action:
+  - variables:
+      which_sat: !input which_sat
+      entity: "{{ trigger.entity_id }}"
+      device: "{{ device_name(entity) }}"
+      switch_qe: "switch.{{device}}_quick_entity_panel"
+  - action: switch.turn_on
+    target:
+      entity_id: "{{ switch_qe }}"
+    data: {}
+  - action: text.set_value
+    target:
+      entity_id: "{{ which_sat }}"
+    data:
+      value: "{{ device }}"
+
+
+mode: queued

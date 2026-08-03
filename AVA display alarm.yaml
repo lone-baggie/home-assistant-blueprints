@@ -37,13 +37,13 @@ blueprint:
         alarm_sentence_1:
           name: Alarm Command 
           description: The primary phrase used to display the alarms.
-          default: "show [me] the alarms"
+          default: "show me the alarms"
           selector:
             text:
         alarm_sentence_2:
           name: Secondary alarm Command 
           description: The secondary phrase to display the alarms.
-          default: "display [the] alarms"
+          default: "(display|show) [the] alarms"
           selector:
             text:
 mode: single
@@ -63,11 +63,15 @@ action:
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
       text_br: "text.{{ device }}_remote_browser_url"
+      switch_ss: "switch.{{ device }}_screensaver_display"
   - if:
     - condition: template
       value_template: "{{ entity is none}}"
     then:
       - stop: ""
+  - action: switch.turn_off
+    target:
+      entity_id: "{{ switch_ss }}"
   - action: text.set_value
     metadata: {}
     target:

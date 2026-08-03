@@ -224,6 +224,7 @@ action:
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
       text_br: "text.{{ device }}_remote_browser_url"
+      switch_ss: "switch.{{ device }}_screensaver_display"
       # Determine current hour, bracket prefix to match, and dynamic greeting text
       current_hour: "{{ now().hour | int }}"
       active_prefix: >-
@@ -399,6 +400,9 @@ action:
       - condition: template
         value_template: "{{ 'true' if display and entity is not none else 'false' }}"
     then:
+      - action: switch.turn_off
+        target:
+          entity_id: "{{ switch_ss }}"
       - action: text.set_value
         metadata: {}
         target:

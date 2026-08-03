@@ -64,11 +64,15 @@ action:
       entity: "{{trigger.satellite_id}}"
       device: "{{ device_name(entity)}}"
       text_br: "text.{{ device }}_remote_browser_url"
+      switch_ss: "switch.{{ device }}_screensaver_display"
   - if:
     - condition: template
       value_template: "{{ entity is none}}"
     then:
       - stop: ""
+  - action: switch.turn_off
+    target:
+      entity_id: "{{ switch_ss }}"
   - action: text.set_value
     metadata: {}
     target:

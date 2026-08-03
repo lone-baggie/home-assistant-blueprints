@@ -18,7 +18,7 @@ blueprint:
           domain: ai_task
     fallback_speaker:
       name: Fallback Media Player
-      description: Default Music Assistant player if the request didn't come from a voice satellite.
+      description: Default Music Assistant player if the request didn't come from a voice satellite or if target resolution fails.
       selector:
         entity:
           domain: media_player
@@ -124,7 +124,14 @@ trigger:
 action:
   - variables:
       sat: "{{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', ''] }}"
-      satellite_player: "{{ 'media_player.' ~ sat[1] if sat[1] != '' else fallback_player_var }}"
+      raw_satellite_player: "{{ 'media_player.' ~ sat[1] if sat[1] != '' else '' }}"
+      satellite_player: >
+        {% if raw_satellite_player != '' and states(raw_satellite_player) not in ['unknown', 'unavailable'] %}
+          {{ raw_satellite_player }}
+        {% else %}
+          {{ fallback_player_var }}
+        {% endif %}
+
       satellite_area_id: "{{ area_id(trigger.device_id) if trigger.device_id is defined and trigger.device_id is not none else '' }}"
       calculated_step: "{{ (vol_step_input | default(5, true) | int) / 100 }}"
 
@@ -188,12 +195,13 @@ action:
               clean_shuffle: "{{ true if raw_shuffle | string | lower in ['true', '1', 'yes', 'on'] else false }}"
               requested_location: "{{ ai_result.data.target_location | default('', true) | string | lower | trim }}"
               
-              # Target player resolution: checks for explicit remote keyword first, then falls back to your robust area/name lookup
+              # Target player resolution with your clean states() validation check
               target_player: >
                 {% set loc = requested_location %}
+                {% set resolved_player = '' %}
                 {% if loc != '' and loc != 'none' %}
                   {% if 'remote' in loc %}
-                    {{ remote_player_var }}
+                    {% set resolved_player = remote_player_var %}
                   {% else %}
                     {% set ns = namespace(found='') %}
                     {% set keywords = loc.split() | reject('in', ['speaker', 'player', 'the', 'on', 'in']) | list %}
@@ -225,11 +233,14 @@ action:
                       {% endfor %}
                     {% endif %}
 
-                    {{ ns.found if ns.found != '' else satellite_player }}
+                    {% set resolved_player = ns.found if ns.found != '' else satellite_player %}
                   {% endif %}
                 {% else %}
-                  {{ satellite_player }}
+                  {% set resolved_player = satellite_player %}
                 {% endif %}
+
+                {# Final sanity check using states() #}
+                {{ resolved_player if resolved_player != '' and states(resolved_player) not in ['unknown', 'unavailable'] else fallback_player_var }}
 
               final_payload: >
                 {% set base = {
@@ -287,7 +298,8 @@ action:
               entity_id: "{{ satellite_player }}"
             data:
               volume_level: >
-                {% set vol = trigger.slots.volume_level | default(50) | int %}
+                {% set raw_vol = trigger.slots.volume_level | default(50) | string %}
+                {% set vol = raw_vol | regex_replace(find='[^0-9]', replace='', ignorecase=True) | default(50, true) | int %}
                 {{ (vol / 100) if vol > 1 else vol }}
 
       - conditions:

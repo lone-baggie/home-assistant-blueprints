@@ -1,35 +1,30 @@
 blueprint:
-  name: AVA voice for Music Assistant
-  author: Lonebaggie (With Unconfigured Remote Speaker Guard)
+  name: AVA Voice Control for Music Assistant (Optimized)
+  author: Lonebaggie (Optimized Edition)
   homeassistant:
     min_version: 2024.6.0
   description: >
     ### 🗣 AVA Voice Control for Music Assistant
     
-    Control music assistant via AVA voice assistants. This blueprint relies on the music assistant
-    media players having the same name as the AVA device (so media_player.xxx matches device xxx). 
-    Includes remote speaker routing with fallback error checks if the remote entity or input is missing.
+    Control Music Assistant via AVA voice satellites. Automatically routes commands to the 
+    media player sharing the satellite's device name, with fallback to a default speaker or 
+    an optional remote speaker override.
     
     <br>
     
     <details>
       <summary><b>ℹ️ Click to view Voice Command Syntax Guide</b></summary>
       <br>
-      When adjusting the phrases below, use these wildcards to fine-tune your commands:
+      When adjusting phrases below, use this syntax:
       
-      * <b>[Square Brackets]</b> = Optional text. The sentence triggers with or without these words.
-        * <i>Example:</i> <code>[the]</code> matches both "play album" and "play the album".
-        
-      * <b>(Parentheses | with | pipes)</b> = Alternation (OR). Matches any single phrase listed.
-        * <i>Example:</i> <code>(play|listen to)</code> matches "play..." or "listen to...".
-        
-      * <b>{Curly Braces}</b> = Wildcard slots. These extract the text to pass to Music Assistant.
-        * <i>Warning:</i> Do not change the text inside these braces (<code>{artist}</code>, <code>{album}</code>, <code>{track}</code>, <code>{playlist}</code>, <code>{radio}</code>).
-        
-      * <b>Nested Brackets</b> = Extra layers of options. <code>[by {artist}]</code> means the artist name is completely optional.
+      * <b>[Square Brackets]</b> = Optional text (e.g., <code>[the]</code>).
+      * <b>(Parentheses | with | pipes)</b> = OR options (e.g., <code>(play|shuffle)</code>).
+      * <b>{Curly Braces}</b> = Extraction slots. <b>Do not change the slot names!</b>
     </details>
   domain: automation
+
   input:
+    # --- Speaker Configuration ---
     default_speaker_options:
       name: Speaker Settings
       icon: mdi:speaker
@@ -37,208 +32,134 @@ blueprint:
       input:
         default_speaker:
           name: Default Speaker
-          description: The speaker to use if voice satellite has no media player.
+          description: The speaker to use if the satellite has no matching local media player.
           selector:
             entity:
               filter:
                 - domain: media_player
         remote_speaker:
           name: Remote Speaker
-          description: Select the remote media player to target when you specifically say "on remote speaker". Leave blank if unused.
+          description: Target speaker when saying "on remote speaker". Leave blank if unused.
           default: ""
           selector:
             entity:
               filter:
                 - domain: media_player
-        volume_bug:
-          name: Low volume bug
-          description: Turn this on if you suffer low volume on first play
-          default: false
+        volume_step:
+          name: Volume Step Percentage
+          description: Percentage amount to step volume up or down.
+          default: 5
           selector:
-            boolean:
-        
+            number:
+              min: 1
+              max: 50
+              step: 1
+              unit_of_measurement: "%"
 
-    # --- Collapsible Artist Section ---
+    # --- Artist Section ---
     artist_options:
       name: Artist Voice Commands
       icon: mdi:account-music
-      description: Custom phrases for managing artist selection and playback.
       collapsed: true
       input:
-        artist_sentence_1:
-          name: Play Artist Phrase
-          description: >
-            Phrase used to play an artist's music.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|stream) [the ](artist|band|group|musician) {artist} [on remote speaker]"
-          selector:
-            text:
-        artist_sentence_2:
-          name: Shuffle Artist Phrase
-          description: >
-            Phrase used to shuffle an artist's music.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(shuffle|randomise) [the ](artist|band|group|musician) {artist} [on remote speaker]"
+        artist_sentence:
+          name: Artist Command Phrase
+          description: Single master pattern for playing or shuffling an artist.
+          default: "(play|listen to|put on|stream|shuffle|randomise) [the ](artist|band|group|musician) {artist} [on remote speaker]"
           selector:
             text:
 
-    # --- Collapsible Track / Song Section ---
+    # --- Song Section ---
     track_options:
       name: Song Voice Commands
       icon: mdi:music-note
-      description: Custom phrases for playing specific songs or tracks.
       collapsed: true
       input:
-        track_sentence_1:
-          name: Play Song Phrase
-          description: >
-            Phrase used to play a specific song or track.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{track}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|stream) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}] [on remote speaker]"
-          selector:
-            text:
-        track_sentence_2:
-          name: Shuffle Song Phrase
-          description: >
-            Phrase used to play a song with shuffling/radio fallback enabled.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{track}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(shuffle|randomise) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}] [on remote speaker]"
+        track_sentence:
+          name: Track Command Phrase
+          description: Single master pattern for playing or shuffling a specific song.
+          default: "(play|listen to|put on|stream|shuffle|randomise) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}] [on remote speaker]"
           selector:
             text:
 
-    # --- Collapsible Playlist Section ---
+    # --- Playlist Section ---
     playlist_options:
       name: Playlist Voice Commands
       icon: mdi:playlist-music
-      description: Custom phrases for managing playlist selection and playback.
       collapsed: true
       input:
-        playlist_sentence_1:
-          name: Play Playlist Phrase
-          description: >
-            Phrase used to play a specific playlist.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{playlist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|stream) [the ](playlist) {playlist} [on remote speaker]"
-          selector:
-            text:
-        playlist_sentence_2:
-          name: Shuffle Playlist Phrase
-          description: >
-            Phrase used to shuffle a specific playlist.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{playlist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(shuffle|randomise) [the ](playlist) {playlist} [on remote speaker]"
+        playlist_sentence:
+          name: Playlist Command Phrase
+          description: Single master pattern for playing or shuffling a playlist.
+          default: "(play|listen to|put on|stream|shuffle|randomise) [the ](playlist) {playlist} [on remote speaker]"
           selector:
             text:
 
-    # --- Collapsible Album Section ---
+    # --- Album Section ---
     album_options:
       name: Album Voice Commands
       icon: mdi:album
-      description: Custom phrases for managing album selection and playback.
       collapsed: true
       input:
-        album_sentence_1:
-          name: Play Album Phrase
-          description: >
-            Phrase used to play an album.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{album}</b></code> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|listen to|put on|stream) [the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}] [on remote speaker]"
-          selector:
-            text:
-        album_sentence_2:
-          name: Shuffle Album Phrase
-          description: >
-            Phrase used to shuffle an album.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{album}</b></code> <code><b>{artist}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(shuffle|randomise)[the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}] [on remote speaker]"
+        album_sentence:
+          name: Album Command Phrase
+          description: Single master pattern for playing or shuffling an album.
+          default: "(play|listen to|put on|stream|shuffle|randomise) [the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}] [on remote speaker]"
           selector:
             text:
 
-    # --- Collapsible Radio Section ---
+    # --- Radio Section ---
     radio_options:
       name: Radio Voice Commands
       icon: mdi:radio
-      description: Custom phrases for tuning into radio stations.
       collapsed: true
       input:
         radio_sentence:
-          name: Play Radio Phrase
-          description: >
-            Phrase used to tune into a radio station.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Mandatory</b> <code><b>{radio}</b></code> <b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
+          name: Radio Command Phrase
+          description: Master pattern for tuning into radio stations.
           default: "(play|listen to|put on|turn on|stream) [the ](radio|BBC|station|radio station) {radio} [on remote speaker]"
           selector:
             text:
 
-    # --- Collapsible Audio Controls Section ---
+    # --- Audio Controls Section ---
     audio_controls:
       name: System Controls (Playback, Volume & Stop)
       icon: mdi:volume-high
-      description: Custom phrases for managing volume, tracking skipping, and halting playback.
       collapsed: true
       input:
         next_sentence:
           name: Next Track Phrase
-          description: >
-            Phrase used to skip to the next track.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
           default: "(next track|next song|skip|skip track|skip song) [on remote speaker]"
           selector:
             text:
         previous_sentence:
           name: Previous Track Phrase
-          description: >
-            Phrase used to return to the previous track.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
           default: "(previous track|previous song|back|go back) [on remote speaker]"
           selector:
             text:
-        volume_up_sentence1:
-          name: Primary Volume Up Phrase
-          description: >
-            Phrase used to turn up the volume.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(louder|turn it up|crank it up|raise the volume) [on remote speaker]"
+        volume_up_sentence:
+          name: Volume Up Phrase
+          default: "(louder|turn it up|crank it up|raise the volume|volume up) [on remote speaker]"
           selector:
             text:
-        volume_up_sentence2:
-          name: Secondary Volume Up Phrase
-          description: >
-            Phrase used to turn up the volume.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "volume up [on remote speaker]"
+        volume_down_sentence:
+          name: Volume Down Phrase
+          default: "(quieter|turn it down|lower the volume|volume down) [on remote speaker]"
           selector:
             text:
-        volume_down_sentence1:
-          name: Primary Volume Down Phrase
-          description: >
-            Phrase used to lower the volume.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(quieter|turn it down|lower the volume) [on remote speaker]"
-          selector:
-            text:
-        volume_down_sentence2:
-          name: Secondary Volume Down Phrase
-          description: >
-            Phrase used to lower the volume.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "volume down [on remote speaker]"
+        volume_set_sentence:
+          name: Set Absolute Volume Phrase
+          default: "(set|change|turn) [the ]volume [to ]{volume}[ percent| %] [on remote speaker]"
           selector:
             text:
         stop_sentence:
           name: Stop Music Phrase
-          description: >
-            Phrase used to halt playback.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(stop|cancel|pause|hush|shut up) [the ][music|audio|radio|playback] [on remote speaker]"
+          default: "(stop|cancel|pause|hush|shut up) [the ](music|audio|radio|playback) [on remote speaker]"
           selector:
             text:
         play_sentence:
-          name: Play Music Phrase
-          description: >
-            Phrase used to start playback.
-            <details><summary><b>💡 Quick Syntax Summary</b></summary><b>Words ignored </b> <code><b>[ ]</b></code> <b>Match word alternatives</b> <code><b>( | )</b></code></details>
-          default: "(play|start|begin) [the ][music|audio|radio|playback] [on remote speaker]"
+          name: Resume / Play Music Phrase
+          default: "(play|start|begin|resume) [the ](music|audio|radio|playback) [on remote speaker]"
           selector:
             text:
 
@@ -246,75 +167,65 @@ mode: single
 
 trigger:
   - trigger: conversation
-    command:
-      - !input artist_sentence_1
-      - !input artist_sentence_2
+    command: !input artist_sentence
     id: artist
   - trigger: conversation
-    command:
-      - !input track_sentence_1
-      - !input track_sentence_2
+    command: !input track_sentence
     id: track
   - trigger: conversation
-    command:
-      - !input playlist_sentence_1
-      - !input playlist_sentence_2
+    command: !input playlist_sentence
     id: playlist
   - trigger: conversation
-    command:
-      - !input album_sentence_1
-      - !input album_sentence_2
+    command: !input album_sentence
     id: album
   - trigger: conversation
-    command:
-      - !input radio_sentence
+    command: !input radio_sentence
     id: radio
   - trigger: conversation
-    command:
-      - !input next_sentence
+    command: !input next_sentence
     id: media_next
   - trigger: conversation
-    command:
-      - !input previous_sentence
+    command: !input previous_sentence
     id: media_previous
   - trigger: conversation
-    command:
-      - !input volume_up_sentence1
-      - !input volume_up_sentence2
+    command: !input volume_up_sentence
     id: volume_up
   - trigger: conversation
-    command:
-      - !input volume_down_sentence1
-      - !input volume_down_sentence2
+    command: !input volume_down_sentence
     id: volume_down
   - trigger: conversation
-    command:
-      - !input stop_sentence
+    command: !input volume_set_sentence
+    id: volume_set
+  - trigger: conversation
+    command: !input stop_sentence
     id: media_stop
   - trigger: conversation
-    command:
-      - !input play_sentence
+    command: !input play_sentence
     id: media_play
 
 condition: []
 
 action:
+  # --- Phase 1: Determine Target Speaker & Resolve Remote Overrides ---
   - variables:
-      volume_bug: !input volume_bug
-      sat: "{{trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', '']}}"
+      vol_step_input: !input volume_step
       default: !input default_speaker
       remote: !input remote_speaker
       spoken_sentence: "{{ trigger.sentence | default('', true) | lower }}"
-      reset: "button.{{sat[1]}}_just_stop"
-      # Determine base local/satellite target
+      
+      # Extract satellite entity ID
+      sat: "{{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', ''] }}"
+      raw_satellite_player: "{{ 'media_player.' ~ sat[1] if sat[1] != '' else '' }}"
+      
+      # Evaluate local satellite speaker vs default speaker
       base_speaker: >
-        {% if sat | length > 1 and sat[1] != "" %}
-          media_player.{{sat[1]}}
+        {% if raw_satellite_player != '' and states(raw_satellite_player) not in ['unknown', 'unavailable'] %}
+          {{ raw_satellite_player }}
         {% else %}
           {{ default }}
         {% endif %}
 
-      # Clean replacement logic: If "on remote speaker" is in the text, use remote. Otherwise base local.
+      # Decide active target speaker
       speaker: >
         {% if 'on remote speaker' in spoken_sentence and remote is defined and remote | length > 0 %}
           {{ remote }}
@@ -322,18 +233,17 @@ action:
           {{ base_speaker }}
         {% endif %}
 
-      # Guard check 1: User asked for remote speaker, but none was defined in the blueprint
+      # Guard Clause Evaluation
       no_remote_configured: >
         {% set explicit_remote = 'on remote speaker' in spoken_sentence %}
         {{ explicit_remote and (remote is not defined or remote | length == 0) }}
 
-      # Guard check 2: Remote speaker was defined, but it's offline or dead
       remote_unavailable: >
         {% set explicit_remote = 'on remote speaker' in spoken_sentence %}
         {{ explicit_remote and remote is defined and remote | length > 0 and states(remote) in ['unavailable', 'unknown', 'off'] }}
 
+  # --- Phase 2: Guard Clause Check Blocks ---
   - choose:
-      # Branch 0a: Guard clause for unconfigured remote speaker input
       - conditions:
           - condition: template
             value_template: "{{ no_remote_configured }}"
@@ -341,7 +251,6 @@ action:
           - set_conversation_response: "No remote speaker setup."
           - stop: "No remote speaker configured"
 
-      # Branch 0b: Guard clause for offline/unavailable remote speaker entity
       - conditions:
           - condition: template
             value_template: "{{ remote_unavailable }}"
@@ -349,16 +258,25 @@ action:
           - set_conversation_response: "Remote speaker not ready."
           - stop: "Remote speaker unavailable"
 
+  # --- Phase 3: Extract Intent Slots & Compute Parameters ---
   - variables:
+      calculated_step: "{{ (vol_step_input | default(5, true) | int) / 100 }}"
       radio: "{{ trigger.slots.radio | default('') }}"
       artist: "{{ trigger.slots.artist | default('') }}"
       album: "{{ trigger.slots.album | default('') }}"
       playlist: "{{ trigger.slots.playlist | default('') }}"
       track: "{{ trigger.slots.track | default('') }}"
+      
+      # Extract & clamp absolute volume (0.0 - 1.0)
+      raw_volume: "{{ trigger.slots.volume | default('30') }}"
+      target_absolute_volume: >-
+        {% set parsed_vol = raw_volume | float(30.0) %}
+        {% set clamped_vol = [ [parsed_vol, 0.0] | max, 100.0 ] | min %}
+        {{ (clamped_vol / 100.0) | round(2) }}
 
       media_type: "{{ trigger.id.split('_') | first }}"
       
-      # Transport action assignment
+      # Determine transport action
       action: >-
         {% if trigger.id == 'media_stop' %}
           media_player.media_stop
@@ -373,28 +291,22 @@ action:
         {% endif %}
 
       media_id: "{{ radio }} {{ artist }} {{ album }} {{ playlist }} {{ track }}"
-      shuffle: >
-        {{ 'shuffle' in spoken_sentence or 'random' in spoken_sentence }}
+      shuffle: "{{ 'shuffle' in spoken_sentence or 'random' in spoken_sentence }}"
 
-      # Math section for calculated volume stepping
+      # Calculate relative volume shifts
       current_volume: "{{ state_attr(speaker, 'volume_level') | float(0.3) }}"
       target_volume: >-
         {% if trigger.id == 'volume_up' %}
-          {{ ([current_volume + 0.05, 1.0] | min) | round(2) }}
+          {{ ([current_volume + calculated_step, 1.0] | min) | round(2) }}
         {% elif trigger.id == 'volume_down' %}
-          {{ ([current_volume - 0.05, 0.0] | max) | round(2) }}
+          {{ ([current_volume - calculated_step, 0.0] | max) | round(2) }}
         {% else %}
           {{ current_volume }}
         {% endif %}
 
-  - action: media_player.shuffle_set
-    target:
-      entity_id: "{{ speaker }}"
-    data:
-      shuffle: false
-
+  # --- Phase 4: Execute Media Commands ---
   - choose:
-      # Branch 1: Unified calculated volume tracking
+      # Relative Volume Adjustment
       - conditions:
           - condition: template
             value_template: "{{ trigger.id in ['volume_up', 'volume_down'] }}"
@@ -405,17 +317,28 @@ action:
             data:
               volume_level: "{{ target_volume }}"
 
-      # Branch 2: Standard Transport Controls (Stop, Skip, Prev)
+      # Absolute Volume Setting
       - conditions:
           - condition: template
-            value_template: "{{ trigger.id in ['media_stop','media_play', 'media_next', 'media_previous'] }}"
+            value_template: "{{ trigger.id == 'volume_set' }}"
+        sequence:
+          - action: media_player.volume_set
+            target:
+              entity_id: "{{ speaker }}"
+            data:
+              volume_level: "{{ target_absolute_volume }}"
+
+      # Transport Controls (Stop, Play, Next, Previous)
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['media_stop', 'media_play', 'media_next', 'media_previous'] }}"
         sequence:
           - action: "{{ action }}"
             target:
               entity_id: "{{ speaker }}"
             data: {}
 
-      # Branch 3: Music Assistant query routing
+      # Music Assistant Query Routing
       - conditions:
           - condition: template
             value_template: "{{ trigger.id in ['artist', 'track', 'album', 'radio', 'playlist'] }}"
@@ -434,12 +357,3 @@ action:
               album: "{{ album }}"
               enqueue: play
               media_type: "{{ media_type }}"
-  - if:
-      - condition: template
-        value_template: "{{volume_bug}}"
-    then:
-      - action: button.press
-        metadata: {}
-        target:
-          entity_id: "{{reset}}"
-        data: {}

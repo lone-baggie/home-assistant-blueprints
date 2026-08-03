@@ -1,170 +1,55 @@
 blueprint:
-  name: "AVA Screen Manager" 
-  author: "Lone baggie"
+  name: AVA Screen Manager
+  author: Lone baggie
   homeassistant:
     min_version: 2024.6.0
   description: >
-     ###  AVA controls web brower screen and Screen saver timeouts.
-     
-     
-         
+    ### AVA controls Broswer screen timeouts.
   domain: automation
   input:
-    assist_satellites:
-     name: "Assist Satellites"
-     description: "Select your AVA satelittes."
-     selector:
-       entity:
-         domain: assist_satellite
-         multiple: true
-    portal_switches:
-      name: "Portal Browser Switches"
-      description: "Select your portal browser display switches."
+    target_switches:
+      name: Trigger Switches
+      description: Select one or more ESPHome switches to trigger this automation.
       selector:
         entity:
-          integration: esphome 
-          domain: switch
+          filter:
+            domain: switch
+            integration: esphome
           multiple: true
-    idle_seconds:
-      name: "Idle Delay (Seconds)"
-      description: "How long the browser display switch must stay 'on' ."
-      default: 10
+    delay_time:
+      name: Delay Time
+      description: How long the trigger switch must remain ON before taking action.
+      default:
+        hours: 0
+        minutes: 0
+        seconds: 20
       selector:
-        number:
-          min: 0
-          max: 3600
-          unit_of_measurement: seconds
-          mode: box
-    target_media_players:
-      name: "Portal Media Players"
-      description: "Select all the portal media player entities you want to actively manage."
-      selector:
-        entity:
-          integration: music_assistant
-          domain: media_player
-          multiple: true
-    overwrite:
-       name: Overwrite Mediaplayer
-       description: Do you want to overwrite vinyl cover with screensaver ?
-       default: false
-       selector:
-         boolean:
+        duration: {}
 
-
-
-# Run instances in parallel so multiple portals going idle simultaneously don't block each other
-mode: parallel
-max: 10
+mode: single
 
 trigger:
   - platform: state
-    id: delay
-    entity_id: !input portal_switches
+    entity_id: !input target_switches
     to: "on"
-    for:
-      hours: 0
-      minutes: 0
-      seconds: !input idle_seconds
-    
-  - platform: state
-    id: stopped
-    entity_id: !input target_media_players
-    to: "idle"
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 5
-  - platform: assist_satellite.listening
-    id: listen
-    target:
-      entity_id: !input assist_satellites
-    options:
-      for: "00:00:00"
-  - platform: assist_satellite.idle
-    id: idle
-    target:
-      entity_id: !input assist_satellites
-    options:
-     for:
-       hours: 0
-       minutes: 0
-       seconds: !input idle_seconds
+    for: !input delay_time
 
 condition: []
 
 action:
-
-  # Extract our environment variables cleanly right up front based on the native trigger context
   - variables:
-      entity: "{{trigger.entity_id}}"
-      device: "{{ device_name(entity)}}"
+      entity: "{{ trigger.entity_id }}"
+      device: "{{ device_name(entity) }}"
       switch_ss: "switch.{{ device }}_screensaver_display"
-      switch_br: "switch.{{ device }}_browser_display"
       text_br: "text.{{ device }}_remote_browser_url"
-      media_player: "media_player.{{ device }}"
-      esphome: "esphome.{{ device }}_webview_command"
-      overwrite: !input overwrite
-  - action: "{{ esphome }}"
-    data: 
-      command: "('clearCache':true)"
 
-  - choose:
-      - conditions:
-          - condition: trigger
-            id:
-              - delay
-              - idle
-        sequence:
-          - action: text.set_value
-            data:
-              value: ""
-            target:
-              entity_id: "{{text_br}}"
-          - action: switch.turn_off
-            target:
-              entity_id: "{{ switch_br }}"
-            data: {}
-          - if:
-              - condition: template
-                value_template: "{{ is_state(media_player, 'playing') and not overwrite }}"
-            then:
-            else:
-              - action: switch.turn_off
-                target:
-                  entity_id: "{{ switch_ss }}"
-              - action: switch.turn_on
-                target:
-                  entity_id: "{{ switch_ss }}"
-      - conditions:
-          - condition: trigger
-            id:
-              - stopped
-        sequence:
-          - action: switch.turn_off
-            target:
-              entity_id: "{{ switch_ss }}"
-            data: {}
-          - delay:
-             hours: 0
-             minutes: 0
-             seconds: 1
-             milliseconds: 0
-          - action: switch.turn_on
-            target:
-              entity_id: "{{ switch_ss }}"
-            data: {}
-      - conditions:
-          - condition: trigger
-            id:
-              - listen
-        sequence:
-          - action: switch.turn_off
-            target:
-              entity_id: "{{ switch_ss }}"
-            data: {}
-          - delay:
-             hours: 0
-             minutes: 0
-             seconds: 1
-             milliseconds: 0      
- 
+  - action: text.set_value
+    target:
+      entity_id: "{{ text_br }}"
+    data:
+      value: " "
+
+  - action: switch.turn_on
+    target:
+      entity_id: "{{ switch_ss }}"
+    data: {}
