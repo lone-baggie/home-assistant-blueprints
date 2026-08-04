@@ -1,12 +1,18 @@
 blueprint:
-  name: "🚀 AI Web Search "
+  name: "🚀 AI Web Search"
   author: "lone baggie"
   homeassistant:
     min_version: 2024.6.0
   description: |
     ## 🧠 Real-Time Web-Connected Voice AI
 
-    Give your local voice assistant **superpowers**! This blueprint intercepts conversation queries, fetches live web search results from **SearXNG** or **Brave Search**, feeds the context alongside **time, date, and home location** into your local Ollama LLM, and speaks back a concise summary.
+    This blueprint allows you to search the web using voice commands starting with **What**, **Where**, **Why**, **When**, **How**, or **Did**. The search results are summarized using AI Tasks.
+    
+    This enables lightweight local LLMs to answer general knowledge questions far more accurately by retrieving live context.
+    
+    *Note: Response quality depends on how clearly the question is phrased, the relevance of the web search snippets, and the underlying LLM's capabilities.*
+    
+    It queries the web using either a local **SearXNG** instance or the cloud-based **Brave Search API**. The retrieved information snippets are fed directly to your chosen AI Task pipeline to construct a concise response.
 
     ---
 
@@ -22,7 +28,7 @@ blueprint:
     #### Option A: Local SearXNG (Recommended)
     ```yaml
     searxng_web_search:   
-      url: "http://192.168.0.252:8080/search?q={{ query | urlencode }}&format=json&categories=general&engines=google,duckduckgo,brave,wikipedia"
+      url: "[http://192.168.0.252:8080/search?q=](http://192.168.0.252:8080/search?q=){{ query | urlencode }}&format=json&categories=general&engines=google,duckduckgo,brave,wikipedia"
       method: GET    
       timeout: 6
       headers:
@@ -33,16 +39,16 @@ blueprint:
     #### Option B: Brave Search API
     ```yaml
     brave_web_search:
-      url: "https://api.search.brave.com/res/v1/web/search?q={{ query | urlencode }}&count=5&spellcheck=0&text_decorations=0"
+      url: "[https://api.search.brave.com/res/v1/web/search?q=](https://api.search.brave.com/res/v1/web/search?q=){{ query | urlencode }}&count=5&spellcheck=0&text_decorations=0"
       method: GET    
       timeout: 4
       headers:
         Accept: "application/json"
         Accept-Encoding: "gzip"
         X-Subscription-Token: "YOUR TOKEN HERE"
-      ```
+    ```
 
-    > **Note:** Don't forget to reload your REST commands under **Developer Tools ➔ YAML ➔ RESTful Commands** after saving!
+    > **Note:** Remember to reload your RESTful commands under **Developer Tools ➔ YAML ➔ RESTful Services** after saving!
 
     </details>
 
@@ -52,7 +58,7 @@ blueprint:
   input:
     search_engine:
       name: "🔍 Search Engine Provider"
-      description: "Choose between your privacy-first local SearXNG container or the cloud-based Brave Search API."
+      description: "Select your search provider: your local, self-hosted SearXNG Docker container or the Brave Search cloud API."
       default: "searxng"
       selector:
         select:
@@ -64,7 +70,7 @@ blueprint:
 
     ai_task_entity:
       name: "🤖 AI Task Entity"
-      description: "Select the LLM AI Task pipeline entity responsible for parsing and summarizing search content."
+      description: "Select the AI Task pipeline entity responsible for processing and summarizing the search snippets."
       selector:
         entity:
           filter:
