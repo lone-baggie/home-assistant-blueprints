@@ -40,6 +40,7 @@ For example, if the AVA device is called **'portal':**
 | [**AVA music assistant**](#10-ava-music-assistant) | Media | Deep integration with Music Assistant (MASS) for playback & navigation. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520music%2520assistant.yaml) |
 | [**Auto ducking volume**](#11-auto-ducking-volume) | Audio / Media | Automatically lowers volume on devices in the same area. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAuto%2520ducking%2520volume.yaml) |
 | [**AVA LLM Music Assistant**](#12-ava-llm-music-assistant) | LLM / Media | LLM-assisted integration for Music Assistant playback and control. | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FLLM%2FAVA%2520LLM%2520Music%2520Assistant.yaml) |
+| [**AI Search Assist**](#13-ai-search-assist) | LLM / Search | LLM-assisted Internet search tool | [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FLLM%2FAI%2520Search%2520Assist.yaml) |
 
 ---
 
@@ -219,6 +220,18 @@ Automatically dips (ducks) the background audio volume on playing media players 
 #### Description
 
 An LLM-assisted version of the AVA Music Assistant blueprint, providing natural language processing for queries and commands related to Music Assistant playback.
+
+---
+
+### 13. AI Search Assist
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FLLM%2FAI%2520Search%2520Assist.yaml)
+
+**File Path:** `LLM/AI Search Assist.yaml`
+
+#### Description
+
+An LLM-assisted internet search tool.
 
 ---
 
