@@ -21,25 +21,26 @@ blueprint:
 
     #### Option A: Local SearXNG (Recommended)
     ```yaml
-    rest_command:
-      searxng_web_search:
-        url: "http://<YOUR_LOCAL_IP>:8080/search?q={{ query | urlencode }}&format=json"
-        method: GET
-        headers:
-          Accept: "application/json"
+    searxng_web_search:   
+      url: "http://192.168.0.252:8080/search?q={{ query | urlencode }}&format=json&categories=general&engines=google,duckduckgo,brave,wikipedia"
+      method: GET    
+      timeout: 6
+      headers:
+        Accept: "application/json"
+        User-Agent: "HomeAssistant-Voice/1.0 (Linux x86_64; ESPHome-Pipeline)"
     ```
 
     #### Option B: Brave Search API
     ```yaml
-    rest_command:
-      brave_web_search:
-        url: "[https://api.search.brave.com/res/v1/web/search?q=](https://api.search.brave.com/res/v1/web/search?q=){{ query | urlencode }}&count=3"
-        method: GET
-        headers:
-          Accept: "application/json"
-          Accept-Encoding: "gzip"
-          X-Subscription-Token: "BSA-YOUR_BRAVE_API_KEY_HERE"
-    ```
+    brave_web_search:
+      url: "https://api.search.brave.com/res/v1/web/search?q={{ query | urlencode }}&count=5&spellcheck=0&text_decorations=0"
+      method: GET    
+      timeout: 4
+      headers:
+        Accept: "application/json"
+        Accept-Encoding: "gzip"
+        X-Subscription-Token: "YOUR TOKEN HERE"
+      ```
 
     > **Note:** Don't forget to reload your REST commands under **Developer Tools ➔ YAML ➔ RESTful Commands** after saving!
 
@@ -113,8 +114,8 @@ action:
       task_name: "Voice Search Summarization"
       instructions: >-
         You are a smart home voice assistant. Summarize the live web search results 
-        to answer the user's question directly. Keep your response brief, clear, and conversational 
-        (1 to 3 short sentences max). Do not use Markdown, bullet points, or special characters.
+        to answer the user's question directly. Keep your response very brief, clear, and conversational 
+        (1 to 2 short sentences max). Do not use Markdown, bullet points, or special characters.
 
         ### System Environment Context:
         - Current Date & Time: {{ now().strftime('%A, %B %d, %Y at %I:%M %p') }}
@@ -141,7 +142,7 @@ action:
           {% else %}
             {% set results = raw_search_results.content.results %}
             {% if results is defined and results | length > 0 %}
-              {% for result in results[:3] %}
+              {% for result in results[:5] %}
                 ---
                 Title: {{ result.title }}
                 Snippet: {{ result.content }}
