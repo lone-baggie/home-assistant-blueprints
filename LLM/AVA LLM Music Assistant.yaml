@@ -1,329 +1,378 @@
 blueprint:
   name: "AVA LLM Music Assistant"
-  author: Lonebaggie 
+  description: "High-performance voice control for Music Assistant with dynamic satellite target detection, local LLM parsing via Ollama, fast-path playback hardware controls, and strict remote speaker validation."
+  author: Lonebaggie
   homeassistant:
     min_version: 2024.6.0
-  description: >
-    ### 🗣 AVA LLM Voice Control for Music Assistant
-    
-    Control music assistant via AVA voice assistants. Supports playing media by 
-    specifying explicit speaker names, room areas, or a dedicated remote speaker!
   domain: automation
   input:
-    ai_task_target:
-      name: AI Task Entity
-      description: The AI Task entity provided by your local LLM integration (e.g., ai_task.ollama_ai_task).
-      selector:
-        entity:
-          domain: ai_task
-    fallback_speaker:
-      name: Fallback Media Player
-      description: Default Music Assistant player if the request didn't come from a voice satellite or if target resolution fails.
-      selector:
-        entity:
-          domain: media_player
-    remote_speaker:
-      name: Remote Media Player
-      description: Designated media player used when saying "remote speaker" (great for shifting Bluetooth devices!).
-      selector:
-        entity:
-          domain: media_player
-    volume_step:
-      name: Volume Step Percentage
-      description: The percentage amount to increase or decrease volume by when saying volume up/down or giving relative shifts.
-      default: 5
-      selector:
-        number:
-          min: 1
-          max: 50
-          step: 1
-          unit_of_measurement: "%"
-
-    voice_phrases:
-      name: Voice Command Phrases
-      icon: mdi:microphone-settings
-      description: Customize the trigger sentences Assist listens for.
+    # ==================================================================
+    # SECTION 1: Target Entities & AI Engine
+    # ==================================================================
+    target_entities_section:
+      name: Target Entities & AI Engine
+      description: Configure media players and the local Ollama AI engine.
+      icon: mdi:speaker-multiple
       collapsed: true
       input:
-        voice_play_phrase:
-          name: Play Command Phrases
-          description: List of sentence patterns Assist listens for when playing media.
+        default_speaker:
+          name: Fallback Default Media Player
+          description: The media player to target if the command did not originate from a satellite with an active media player.
+          selector:
+            entity:
+              domain: media_player
+
+        remote_speaker:
+          name: Remote / Secondary Speaker
+          description: The target media player when the user explicitly requests output to a remote speaker.
+          selector:
+            entity:
+              domain: media_player
+
+        ai_task_entity:
+          name: AI Task Engine Entity
+          description: The local Ollama AI Task engine entity used to extract structured metadata.
+          default: ai_task.ollama_ai_task
+          selector:
+            entity:
+              domain: ai_task
+
+    # ==================================================================
+    # SECTION 2: Voice Command Triggers (Collapsed UI Group)
+    # ==================================================================
+    voice_triggers_section:
+      name: Voice Command Triggers
+      description: Custom sentence patterns for media control, navigation, and modifier phrases.
+      icon: mdi:account-voice
+      collapsed: true
+      input:
+        remote_speaker_trigger_phrase:
+          name: Remote Speaker Voice Modifier
+          description: Spoken phrase that forces audio output to the remote speaker instead of the local satellite.
+          default: "on remote speaker"
+          selector:
+            text: {}
+
+        play_trigger_sentences:
+          name: Play / Stream / Shuffle Sentences
+          description: Trigger pattern sent to Ollama for natural language search extraction.
           default:
-            - "play {query}"
-            - "stream {query}"
-            - "shuffle {query}"
-            - "music by {query}"
+            - "(play|stream|shuffle) {query} [on remote speaker]"
           selector:
-            object: {}
-        voice_stop_phrase:
-          name: Stop / Pause Phrase
-          description: The sentence pattern for stopping or pausing.
-          default: "stop [the] (music|radio|song)"
-          selector:
-            text: {}
-        voice_next_phrase:
-          name: Next Track Phrase
-          description: The sentence pattern for skipping forward.
-          default: "next track"
-          selector:
-            text: {}
-        voice_prev_phrase:
-          name: Previous Track Phrase
-          description: The sentence pattern for going back.
-          default: "previous track"
-          selector:
-            text: {}
-        voice_volume_phrase:
-          name: Volume Control Phrase
-          description: The sentence pattern for setting specific volume levels.
-          default: "set volume [to] {volume_level}"
-          selector:
-            text: {}
-        voice_vol_up_phrase:
-          name: Volume Up Phrase
-          description: The sentence pattern for turning volume up.
-          default: "turn up [the] volume"
-          selector:
-            text: {}
-        voice_vol_down_phrase:
-          name: Volume Down Phrase
-          description: The sentence pattern for turning volume down.
-          default: "turn down [the] volume"
-          selector:
-            text: {}
+            text:
+              multiple: true
 
-variables:
-  fallback_player_var: !input fallback_speaker
-  remote_player_var: !input remote_speaker
-  ai_task_entity_var: !input ai_task_target
-  vol_step_input: !input volume_step
+        stop_trigger_sentences:
+          name: Stop / Pause Sentences
+          description: Trigger pattern to halt playback directly (bypasses AI).
+          default:
+            - "(stop radio|pause radio|stop music|pause music) [on remote speaker]"
+          selector:
+            text:
+              multiple: true
 
+        next_trigger_sentences:
+          name: Next Track Sentences
+          description: Trigger pattern to skip to the next track (bypasses AI).
+          default:
+            - "next track [on remote speaker]"
+          selector:
+            text:
+              multiple: true
+
+        prev_trigger_sentences:
+          name: Previous Track Sentences
+          description: Trigger pattern to skip to the previous track (bypasses AI).
+          default:
+            - "previous track [on remote speaker]"
+          selector:
+            text:
+              multiple: true
+
+        set_volume_sentences:
+          name: Set Volume Sentences
+          description: Trigger pattern for absolute volume setting (bypasses AI).
+          default:
+            - "set volume [to] {query} [on remote speaker]"
+          selector:
+            text:
+              multiple: true
+
+        volume_up_sentences:
+          name: Volume Up Sentences
+          description: Trigger pattern to increase volume (bypasses AI).
+          default:
+            - "volume up [on remote speaker]"
+          selector:
+            text:
+              multiple: true
+
+        volume_down_sentences:
+          name: Volume Down Sentences
+          description: Trigger pattern to decrease volume (bypasses AI).
+          default:
+            - "volume down [on remote speaker]"
+          selector:
+            text:
+              multiple: true
+
+    # ==================================================================
+    # SECTION 3: Audio Adjustments
+    # ==================================================================
+    audio_settings_section:
+      name: Audio Adjustments
+      description: Adjust hardware volume behavior.
+      icon: mdi:volume-high
+      collapsed: true
+      input:
+        volume_step_percentage:
+          name: Volume Step Percentage
+          description: Percentage to raise or lower the volume on 'Volume Up' / 'Volume Down'.
+          default: 5
+          selector:
+            number:
+              min: 1
+              max: 20
+              step: 1
+              unit_of_measurement: "%"
+              mode: slider
+
+# ----------------------------------------------------------------------
+# Dynamic Triggers (Assigned Input Sentences -> Trigger IDs)
+# ----------------------------------------------------------------------
 trigger:
-  - platform: conversation
-    command: !input voice_play_phrase
-    id: "play_media"
-  - platform: conversation
-    command: !input voice_stop_phrase
-    id: "stop_media"
-  - platform: conversation
-    command: !input voice_next_phrase
-    id: "next_track"
-  - platform: conversation
-    command: !input voice_prev_phrase
-    id: "prev_track"
-  - platform: conversation
-    command: !input voice_volume_phrase
-    id: "set_volume"
-  - platform: conversation
-    command: !input voice_vol_up_phrase
-    id: "volume_up"
-  - platform: conversation
-    command: !input voice_vol_down_phrase
-    id: "volume_down"
+  - trigger: conversation
+    command: !input play_trigger_sentences
+    id: play_media
+  - trigger: conversation
+    command: !input stop_trigger_sentences
+    id: stop_media
+  - trigger: conversation
+    command: !input next_trigger_sentences
+    id: next_track
+  - trigger: conversation
+    command: !input prev_trigger_sentences
+    id: previous_track
+  - trigger: conversation
+    command: !input set_volume_sentences
+    id: set_volume
+  - trigger: conversation
+    command: !input volume_up_sentences
+    id: volume_up
+  - trigger: conversation
+    command: !input volume_down_sentences
+    id: volume_down
 
+# ----------------------------------------------------------------------
+# Action Pipeline
+# ----------------------------------------------------------------------
 action:
-  - variables:
+  # Step 1: Bind Blueprint inputs to local Jinja runtime variables
+  - alias: "Process Blueprint Inputs & Compute Speaker Target"
+    variables:
+      default_player: !input default_speaker
+      remote_player: !input remote_speaker
+      ai_engine: !input ai_task_entity
+      remote_modifier: !input remote_speaker_trigger_phrase
+      step_pct: !input volume_step_percentage
+
+      # Safely extract satellite entity ID string (e.g., assist_satellite.portalmini_white -> ['assist_satellite', 'portalmini_white'])
       sat: "{{ trigger.satellite_id.split('.') if trigger.satellite_id is defined and trigger.satellite_id is not none and '.' in trigger.satellite_id else ['', ''] }}"
       raw_satellite_player: "{{ 'media_player.' ~ sat[1] if sat[1] != '' else '' }}"
-      satellite_player: >
+
+      # Evaluate satellite player availability versus the configured default player input
+      base_speaker: >-
         {% if raw_satellite_player != '' and states(raw_satellite_player) not in ['unknown', 'unavailable'] %}
           {{ raw_satellite_player }}
         {% else %}
-          {{ fallback_player_var }}
+          {{ default_player }}
         {% endif %}
 
-      satellite_area_id: "{{ area_id(trigger.device_id) if trigger.device_id is defined and trigger.device_id is not none else '' }}"
-      calculated_step: "{{ (vol_step_input | default(5, true) | int) / 100 }}"
+      # Identify if remote target was explicitly requested
+      raw_sentence: "{{ trigger.sentence | lower }}"
+      has_remote_speaker: "{{ remote_modifier | lower in raw_sentence }}"
 
+      # Validate remote speaker hardware status
+      remote_is_available: >-
+        {{ remote_player != '' and states(remote_player) not in ['unknown', 'unavailable'] }}
+
+      # Determine target entity
+      target_player: "{{ remote_player if has_remote_speaker else base_speaker }}"
+
+      # Hardware shuffle flag check
+      is_shuffle: "{{ 'shuffle' in raw_sentence }}"
+
+      # Strip remote modifier and convert 'shuffle' -> 'play' for Ollama's grammar engine
+      normalized_sentence: >-
+        {% set no_remote = raw_sentence | replace(remote_modifier | lower, '') %}
+        {% if 'shuffle' in no_remote %}
+          {{ no_remote | replace('shuffle', 'play') | trim }}
+        {% else %}
+          {{ no_remote | trim }}
+        {% endif %}
+
+  # Step 2: Strict Remote Speaker Check (Exit if requested but unavailable)
+  - if:
+      - condition: template
+        value_template: "{{ has_remote_speaker and not remote_is_available }}"
+    then:
+      - set_conversation_response: "Remote speaker not found."
+      - alias: "Halt Automation Execution"
+        stop: "Remote speaker requested but entity is unavailable or missing."
+
+  # Step 3: Fast-Path Hardware Branching via Trigger IDs
   - choose:
+      # Branch 1: Stop / Pause
       - conditions:
           - condition: trigger
-            id: "play_media"
+            id: stop_media
         sequence:
-          - variables:
-              raw_command: "{{ trigger.sentence | default(trigger.slots.query, true) }}"
-          - action: ai_task.generate_data
+          - alias: "Stop Media Player"
+            action: media_player.media_stop
+            target:
+              entity_id: "{{ target_player }}"
+
+      # Branch 2: Next Track
+      - conditions:
+          - condition: trigger
+            id: next_track
+        sequence:
+          - alias: "Skip to Next Track"
+            action: media_player.media_next_track
+            target:
+              entity_id: "{{ target_player }}"
+
+      # Branch 3: Previous Track
+      - conditions:
+          - condition: trigger
+            id: previous_track
+        sequence:
+          - alias: "Skip to Previous Track"
+            action: media_player.media_previous_track
+            target:
+              entity_id: "{{ target_player }}"
+
+      # Branch 4: Absolute Volume Set
+      - conditions:
+          - condition: trigger
+            id: set_volume
+        sequence:
+          - alias: "Set Exact Volume Level"
+            action: media_player.volume_set
+            target:
+              entity_id: "{{ target_player }}"
             data:
-              entity_id: "{{ ai_task_entity_var }}"
-              task_name: "Parse media play request with optional location"
+              volume_level: >-
+                {% set num = trigger.slots.query | replace('%', '') | trim | float(50) %}
+                {{ (num / 100.0) | clamp(0.0, 1.0) }}
+
+      # Branch 5: Relative Volume Up
+      - conditions:
+          - condition: trigger
+            id: volume_up
+        sequence:
+          - alias: "Increase Volume by User Step %"
+            action: media_player.volume_set
+            target:
+              entity_id: "{{ target_player }}"
+            data:
+              volume_level: >-
+                {% set current = state_attr(target_player, 'volume_level') | float(0.5) %}
+                {% set delta = (step_pct | float(5)) / 100.0 %}
+                {{ (current + delta) | clamp(0.0, 1.0) }}
+
+      # Branch 6: Relative Volume Down
+      - conditions:
+          - condition: trigger
+            id: volume_down
+        sequence:
+          - alias: "Decrease Volume by User Step %"
+            action: media_player.volume_set
+            target:
+              entity_id: "{{ target_player }}"
+            data:
+              volume_level: >-
+                {% set current = state_attr(target_player, 'volume_level') | float(0.5) %}
+                {% set delta = (step_pct | float(5)) / 100.0 %}
+                {{ (current - delta) | clamp(0.0, 1.0) }}
+
+      # Branch 7: Complex Play Query -> Delegate to Ollama AI Task Engine
+      - conditions:
+          - condition: trigger
+            id: play_media
+        sequence:
+          - alias: "Toggle Target Media Player Shuffle Mode"
+            action: media_player.shuffle_set
+            target:
+              entity_id: "{{ target_player }}"
+            data:
+              shuffle: "{{ is_shuffle }}"
+
+          - alias: "Parse Normalized Command via Ollama"
+            action: ai_task.generate_data
+            data:
+              entity_id: "{{ ai_engine }}"
+              task_name: "music_assistant_parser"
               instructions: >-
-                Extract the clean media payload and any target destination from this complete voice command sentence: "{{ raw_command }}".
-                CRITICAL RULES FOR EXTRACTION:
-                - media_id MUST only contain the actual name of the track, artist, album, playlist, or station (e.g., "The Beatles", "BBC Radio 4"). Do NOT include action words, prepositions like "on" or "in", or speaker names inside media_id.
-                - media_type MUST be strictly one of: track, artist, album, playlist, radio, or podcast.
-                - If searching for an artist whose name contains conjunctions (like "and" or "&"), use standard common spelling (e.g. "Peter, Paul and Mary").
-                - If the request specifies a target speaker name, device name, room, area, or "remote speaker" (e.g., "on remote speaker", "in the kitchen"), extract that specific destination name into the "target_location" field. Otherwise, leave it blank.
-                - If the user uses words like "shuffle", "randomize", or "mix up" anywhere in the command, set the shuffle field to true. Otherwise, set it to false.
-                - Always set enqueue to "replace".
+                You are a natural language parser for Home Assistant's Music Assistant.
+                Extract search parameters from the user's spoken sentence: "{{ normalized_sentence }}"
+
+                RULES FOR EXTRACTION:
+                1. "media_id": The main search target (song name, album title, artist name, radio station, or playlist).
+                2. "artist": Extract any artist mentioned in the request (e.g., "by Pink Floyd", "Queen").
+                3. "album": Extract any album mentioned in the request.
+                4. "media_type": Classify the media type. Must be one of: artist, album, track, playlist, radio, podcast.
+                   - Use "radio" if a radio station, stream, or channel is mentioned (e.g., "radio 4", "BBC Radio 1").
+                   - Use "album" if an album title is mentioned.
+                   - Use "artist" if playing an artist's catalog.
+                   - Use "track" if a specific song is requested.
+                   - Use "playlist" if a playlist is requested.
               structure:
                 media_id:
-                  description: "The clean name of the track, artist, album, playlist, station, or podcast."
+                  description: "Primary search item"
                   required: true
                   selector:
                     text: {}
                 media_type:
-                  description: "Strictly one of: track, artist, album, playlist, radio, or podcast"
-                  required: true
+                  description: "Media type classification"
+                  required: false
                   selector:
-                    text: {}
+                    select:
+                      options:
+                        - artist
+                        - album
+                        - track
+                        - playlist
+                        - radio
+                        - podcast
                 artist:
-                  description: "Optional artist name to narrow down searches. Leave empty if not applicable."
+                  description: "Artist restriction"
                   required: false
                   selector:
                     text: {}
-                target_location:
-                  description: "The requested speaker name, device name, room, area, or 'remote speaker' if specified. Leave blank if none."
+                album:
+                  description: "Album restriction"
                   required: false
                   selector:
                     text: {}
-                shuffle:
-                  description: "Set to true if user asks to shuffle or play randomly, false otherwise"
-                  required: true
-                  selector:
-                    boolean: {}
-                enqueue:
-                  description: "Always set to replace"
-                  required: true
-                  selector:
-                    text: {}
-            response_variable: ai_result
+            response_variable: parsed_intent
 
-          - variables:
-              raw_artist: "{{ ai_result.data.artist | default('', true) }}"
-              clean_artist: "{{ raw_artist | string | trim if raw_artist is not none and raw_artist | string | lower != 'none' else '' }}"
-              raw_shuffle: "{{ ai_result.data.shuffle | default(false, true) }}"
-              clean_shuffle: "{{ true if raw_shuffle | string | lower in ['true', '1', 'yes', 'on'] else false }}"
-              requested_location: "{{ ai_result.data.target_location | default('', true) | string | lower | trim }}"
-              
-              # Target player resolution with your clean states() validation check
-              target_player: >
-                {% set loc = requested_location %}
-                {% set resolved_player = '' %}
-                {% if loc != '' and loc != 'none' %}
-                  {% if 'remote' in loc %}
-                    {% set resolved_player = remote_player_var %}
-                  {% else %}
-                    {% set ns = namespace(found='') %}
-                    {% set keywords = loc.split() | reject('in', ['speaker', 'player', 'the', 'on', 'in']) | list %}
-                    {% if keywords | length == 0 %}
-                      {% set keywords = [loc] %}
-                    {% endif %}
-
-                    {# Step 1: Search media players for keyword match #}
-                    {% for p in states.media_player %}
-                      {% set p_text = (p.entity_id ~ ' ' ~ (p.name | default('')) ~ ' ' ~ (p.attributes.friendly_name | default(''))) | lower %}
-                      {% for kw in keywords %}
-                        {% if kw in p_text and ns.found == '' %}
-                          {% set ns.found = p.entity_id %}
-                        {% endif %}
-                      {% endfor %}
-                    {% endfor %}
-                    
-                    {# Step 2: If no media player matched, check areas #}
-                    {% if ns.found == '' %}
-                      {% for a in areas() %}
-                        {% for kw in keywords %}
-                          {% if kw in a.lower() and ns.found == '' %}
-                            {% set area_players = area_entities(a) | select('match', 'media_player.') | list %}
-                            {% if area_players | length > 0 %}
-                              {% set ns.found = area_players[0] %}
-                            {% endif %}
-                          {% endif %}
-                        {% endfor %}
-                      {% endfor %}
-                    {% endif %}
-
-                    {% set resolved_player = ns.found if ns.found != '' else satellite_player %}
-                  {% endif %}
-                {% else %}
-                  {% set resolved_player = satellite_player %}
-                {% endif %}
-
-                {# Final sanity check using states() #}
-                {{ resolved_player if resolved_player != '' and states(resolved_player) not in ['unknown', 'unavailable'] else fallback_player_var }}
-
-              final_payload: >
-                {% set base = {
-                  "media_id": ai_result.data.media_id,
-                  "media_type": ai_result.data.media_type,
-                  "enqueue": ai_result.data.enqueue | default('replace', true)
-                } %}
-                {% if clean_artist != '' %}
-                  {{ dict(base, artist=clean_artist) }}
-                {% else %}
-                  {{ base }}
-                {% endif %}
-
-          - action: media_player.shuffle_set
+          - alias: "Play Media via Music Assistant"
+            action: music_assistant.play_media
             target:
               entity_id: "{{ target_player }}"
-            data:
-              shuffle: "{{ clean_shuffle }}"
-
-          - action: music_assistant.play_media
-            target:
-              entity_id: "{{ target_player }}"
-            data: "{{ final_payload }}"
-
-      - conditions:
-          - condition: trigger
-            id: "stop_media"
-        sequence:
-          - action: media_player.media_stop
-            target:
-              entity_id: "{{ satellite_player }}"
-
-      - conditions:
-          - condition: trigger
-            id: "next_track"
-        sequence:
-          - action: media_player.media_next_track
-            target:
-              entity_id: "{{ satellite_player }}"
-
-      - conditions:
-          - condition: trigger
-            id: "prev_track"
-        sequence:
-          - action: media_player.media_previous_track
-            target:
-              entity_id: "{{ satellite_player }}"
-
-      - conditions:
-          - condition: trigger
-            id: "set_volume"
-        sequence:
-          - action: media_player.volume_set
-            target:
-              entity_id: "{{ satellite_player }}"
-            data:
-              volume_level: >
-                {% set raw_vol = trigger.slots.volume_level | default(50) | string %}
-                {% set vol = raw_vol | regex_replace(find='[^0-9]', replace='', ignorecase=True) | default(50, true) | int %}
-                {{ (vol / 100) if vol > 1 else vol }}
-
-      - conditions:
-          - condition: trigger
-            id: "volume_up"
-        sequence:
-          - action: media_player.volume_set
-            target:
-              entity_id: "{{ satellite_player }}"
-            data:
-              volume_level: >
-                {% set current = state_attr(satellite_player, 'volume_level') | default(0.3, true) | float %}
-                {{ [current + calculated_step, 1.0] | min }}
-
-      - conditions:
-          - condition: trigger
-            id: "volume_down"
-        sequence:
-          - action: media_player.volume_set
-            target:
-              entity_id: "{{ satellite_player }}"
-            data:
-              volume_level: >
-                {% set current = state_attr(satellite_player, 'volume_level') | default(0.3, true) | float %}
-                {{ [current - calculated_step, 0.0] | max }}
+            data: >-
+              {% set d = parsed_intent.data %}
+              {% set ns = namespace(payload={'media_id': d.media_id, 'enqueue': 'play'}) %}
+              {% if d.media_type is defined and d.media_type and d.media_type != '' %}
+                {% set ns.payload = dict(ns.payload, media_type=d.media_type) %}
+              {% endif %}
+              {% if d.artist is defined and d.artist and d.artist != '' %}
+                {% set ns.payload = dict(ns.payload, artist=d.artist) %}
+              {% endif %}
+              {% if d.album is defined and d.album and d.album != '' %}
+                {% set ns.payload = dict(ns.payload, album=d.album) %}
+              {% endif %}
+              {{ ns.payload }}
 
 mode: single
