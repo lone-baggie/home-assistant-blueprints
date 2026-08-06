@@ -136,19 +136,19 @@ Home Assistant `to do` list management. Can also display list on screen
 
 * Integrates directly with native Home Assistant To-Do lists.  
 * Allows adding and item removal.  
-* Option to delete all items
+* Option to delete the entire list.
 
 ---
 
-### 7. AVA Touch Trigger html
+### 7. AVA Touch screen
 
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Touch%2520Trigger%2520html.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flone-baggie%2Fhome-assistant-blueprints%2Fblob%2Fmain%2FAVA%2520Touch%2520screen%25220.yaml)
 
-**File Path:** `AVA Touch Trigger html.yaml`
+**File Path:** `AVA Touch screen.yaml`
 
 #### Description
 
-Triggers HTML views and display actions when touch events occur on the AVA screen.
+Uses the screen saver switch as a trigger. If screen saver turned off , it will trigger the quick entry screen on.
 
 ---
 
@@ -160,11 +160,7 @@ Triggers HTML views and display actions when touch events occur on the AVA scree
 
 #### Description
 
-#### Features
-
-* Idle duration timer configuration.  
-* Displays minimal ambient data (e.g., dim clock or black display) to prevent display burn-in.  
-* Instant wake upon button press or touch input.
+Simply turns on the screensaver by voice. Useful when amending device and need to turn the screensavwe back on.
 
 ---
 
