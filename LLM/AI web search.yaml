@@ -1,3 +1,4 @@
+
 blueprint:
   name: "🚀 AI Web Search"
   author: "lone baggie"
@@ -23,17 +24,30 @@ blueprint:
 
     <br>
 
-    You **MUST** define at least one of the following `rest_command` blocks inside your `/config/configuration.yaml` file so Home Assistant can fetch live search results.
+    You **MUST** define at least one of the following `rest_command:` blocks inside your `/config/configuration.yaml` file so Home Assistant can fetch live search results.
 
+     ```yaml   
+     rest_command:
+       searxng_web_search:
+         <rest of the code>
+     ```
+     or 
+     
+     ```yaml
+     rest_command: !include rest_command.yaml
+     ```
+     
+     
     #### Option A: Local SearXNG (Recommended)
     ```yaml
     searxng_web_search:   
-      url: "[http://192.168.0.252:8080/search?q=](http://192.168.0.252:8080/search?q=){{ query | urlencode }}&format=json&categories=general&engines=google,duckduckgo,brave,wikipedia"
+      url: "[http://<YOUR IP HERE>:8080/search?q=](http://<YOUR IP HERE>:8080/search?q=){{ query | urlencode }}&format=json&categories=general&engines=google,duckduckgo,brave,wikipedia"
       method: GET    
       timeout: 6
       headers:
         Accept: "application/json"
         User-Agent: "HomeAssistant-Voice/1.0 (Linux x86_64; ESPHome-Pipeline)"
+
     ```
 
     #### Option B: Brave Search API

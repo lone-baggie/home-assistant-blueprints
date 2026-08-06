@@ -1,6 +1,6 @@
 blueprint:
-  name: "AVA LLM Music Assistant"
-  description: "High-performance voice control for Music Assistant with dynamic satellite target detection, local LLM parsing via Ollama, fast-path playback hardware controls, and strict remote speaker validation."
+  name: "AVA LLM Music Assistant (AI Task Edition)"
+  description: "High-performance voice control for Music Assistant with dynamic satellite target detection, structured extraction using ai_task.generate_data, fast-path hardware controls, and strict remote speaker validation."
   author: Lonebaggie
   homeassistant:
     min_version: 2024.6.0
@@ -11,7 +11,7 @@ blueprint:
     # ==================================================================
     target_entities_section:
       name: Target Entities & AI Engine
-      description: Configure media players and the local Ollama AI engine.
+      description: Configure media players and the local AI Task entity.
       icon: mdi:speaker-multiple
       collapsed: true
       input:
@@ -30,9 +30,8 @@ blueprint:
               domain: media_player
 
         ai_task_entity:
-          name: AI Task Engine Entity
-          description: The local Ollama AI Task engine entity used to extract structured metadata.
-          default: ai_task.ollama_ai_task
+          name: AI Task Entity
+          description: The AI Task entity (ai_task domain) used to extract structured metadata.
           selector:
             entity:
               domain: ai_task
@@ -55,7 +54,7 @@ blueprint:
 
         play_trigger_sentences:
           name: Play / Stream / Shuffle Sentences
-          description: Trigger pattern sent to Ollama for natural language search extraction.
+          description: Trigger pattern sent to ai_task for natural language search extraction.
           default:
             - "(play|stream|shuffle) {query} [on remote speaker]"
           selector:
@@ -93,25 +92,30 @@ blueprint:
           name: Set Volume Sentences
           description: Trigger pattern for absolute volume setting (bypasses AI).
           default:
-            - "set volume [to] {query} [on remote speaker]"
+            - "set [the] volume [to] {query} [on remote speaker]"
+            - "set music volume [to] {query} [on remote speaker]"
           selector:
             text:
               multiple: true
 
         volume_up_sentences:
           name: Volume Up Sentences
-          description: Trigger pattern to increase volume (bypasses AI).
+          description: Fast-path volume up sentences (structured to avoid built-in intent timeout).
           default:
-            - "volume up [on remote speaker]"
+            - "[raise|increase] [the] volume [up] [on remote speaker]"
+            - "turn [the] music up [on remote speaker]"
+            - "make it louder [on remote speaker]"
           selector:
             text:
               multiple: true
 
         volume_down_sentences:
           name: Volume Down Sentences
-          description: Trigger pattern to decrease volume (bypasses AI).
+          description: Fast-path volume down sentences (structured to avoid built-in intent timeout).
           default:
-            - "volume down [on remote speaker]"
+            - "[lower|decrease] [the] volume [down] [on remote speaker]"
+            - "turn [the] music down [on remote speaker]"
+            - "make it quieter [on remote speaker]"
           selector:
             text:
               multiple: true
@@ -196,13 +200,13 @@ action:
       remote_is_available: >-
         {{ remote_player != '' and states(remote_player) not in ['unknown', 'unavailable'] }}
 
-      # Determine target entity
+      # Determine target entity dynamically
       target_player: "{{ remote_player if has_remote_speaker else base_speaker }}"
 
       # Hardware shuffle flag check
       is_shuffle: "{{ 'shuffle' in raw_sentence }}"
 
-      # Strip remote modifier and convert 'shuffle' -> 'play' for Ollama's grammar engine
+      # Strip remote modifier and convert 'shuffle' -> 'play' for AI processing
       normalized_sentence: >-
         {% set no_remote = raw_sentence | replace(remote_modifier | lower, '') %}
         {% if 'shuffle' in no_remote %}
@@ -266,7 +270,7 @@ action:
                 {% set num = trigger.slots.query | replace('%', '') | trim | float(50) %}
                 {{ (num / 100.0) | clamp(0.0, 1.0) }}
 
-      # Branch 5: Relative Volume Up
+      # Branch 5: Relative Volume Up (Fast Path)
       - conditions:
           - condition: trigger
             id: volume_up
@@ -277,11 +281,11 @@ action:
               entity_id: "{{ target_player }}"
             data:
               volume_level: >-
-                {% set current = state_attr(target_player, 'volume_level') | float(0.5) %}
+                {% set current = state_attr(target_player, 'volume_level') | float(0.3) %}
                 {% set delta = (step_pct | float(5)) / 100.0 %}
                 {{ (current + delta) | clamp(0.0, 1.0) }}
 
-      # Branch 6: Relative Volume Down
+      # Branch 6: Relative Volume Down (Fast Path)
       - conditions:
           - condition: trigger
             id: volume_down
@@ -292,11 +296,11 @@ action:
               entity_id: "{{ target_player }}"
             data:
               volume_level: >-
-                {% set current = state_attr(target_player, 'volume_level') | float(0.5) %}
+                {% set current = state_attr(target_player, 'volume_level') | float(0.3) %}
                 {% set delta = (step_pct | float(5)) / 100.0 %}
                 {{ (current - delta) | clamp(0.0, 1.0) }}
 
-      # Branch 7: Complex Play Query -> Delegate to Ollama AI Task Engine
+      # Branch 7: Complex Play Query -> Delegate to Home Assistant AI Task Engine
       - conditions:
           - condition: trigger
             id: play_media
@@ -308,7 +312,7 @@ action:
             data:
               shuffle: "{{ is_shuffle }}"
 
-          - alias: "Parse Normalized Command via Ollama"
+          - alias: "Parse Normalized Command via Home Assistant AI Task"
             action: ai_task.generate_data
             data:
               entity_id: "{{ ai_engine }}"
@@ -322,7 +326,7 @@ action:
                 2. "artist": Extract any artist mentioned in the request (e.g., "by Pink Floyd", "Queen").
                 3. "album": Extract any album mentioned in the request.
                 4. "media_type": Classify the media type. Must be one of: artist, album, track, playlist, radio, podcast.
-                   - Use "radio" if a radio station, stream, or channel is mentioned (e.g., "radio 4", "BBC Radio 1").
+                   - Use "radio" if a radio station, stream, or channel is mentioned.
                    - Use "album" if an album title is mentioned.
                    - Use "artist" if playing an artist's catalog.
                    - Use "track" if a specific song is requested.
@@ -359,6 +363,7 @@ action:
 
           - alias: "Play Media via Music Assistant"
             action: music_assistant.play_media
+            continue_on_error: true
             target:
               entity_id: "{{ target_player }}"
             data: >-
@@ -374,5 +379,18 @@ action:
                 {% set ns.payload = dict(ns.payload, album=d.album) %}
               {% endif %}
               {{ ns.payload }}
+
+          - alias: "Wait brief moment for player state change"
+            delay:
+              seconds: 1
+
+          - alias: "Report Failure If Player Is Not Playing"
+            if:
+              - condition: template
+                value_template: "{{ states(target_player) not in ['playing', 'buffering'] }}"
+            then:
+              - set_conversation_response: >-
+                  {% set query = parsed_intent.data.media_id | default('that media', true) %}
+                  Sorry, I couldn't find {{ query }} on Music Assistant.
 
 mode: single
