@@ -68,6 +68,7 @@ blueprint:
           default: "(play|listen to|put on|stream|shuffle|randomise) [the ](artist|band|group|musician) {artist} [on remote speaker]"
           selector:
             text:
+              multiple: true
 
     # --- Song Section ---
     track_options:
@@ -81,6 +82,7 @@ blueprint:
           default: "(play|listen to|put on|stream|shuffle|randomise) [the ](song|track|tune) {track}[ [by ][the ](artist|band|group|musician) {artist}] [on remote speaker]"
           selector:
             text:
+              multiple: true
 
     # --- Playlist Section ---
     playlist_options:
@@ -94,6 +96,7 @@ blueprint:
           default: "(play|listen to|put on|stream|shuffle|randomise) [the ](playlist) {playlist} [on remote speaker]"
           selector:
             text:
+              multiple: true
 
     # --- Album Section ---
     album_options:
@@ -107,6 +110,7 @@ blueprint:
           default: "(play|listen to|put on|stream|shuffle|randomise) [the ](album|ep|record|compilation) {album}[ [by ][the ](artist|band|group) {artist}] [on remote speaker]"
           selector:
             text:
+              multiple: true
 
     # --- Radio Section ---
     radio_options:
@@ -120,6 +124,7 @@ blueprint:
           default: "(play|listen to|put on|turn on|stream) [the ](radio|BBC|station|radio station) {radio} [on remote speaker]"
           selector:
             text:
+              multiple: true
 
     # --- Audio Controls Section ---
     audio_controls:
@@ -132,36 +137,43 @@ blueprint:
           default: "(next track|next song|skip|skip track|skip song) [on remote speaker]"
           selector:
             text:
+              multiple: true
         previous_sentence:
           name: Previous Track Phrase
           default: "(previous track|previous song|back|go back) [on remote speaker]"
           selector:
             text:
+              multiple: true
         volume_up_sentence:
           name: Volume Up Phrase
           default: "(louder|turn it up|crank it up|raise the volume|volume up) [on remote speaker]"
           selector:
             text:
+              multiple: true
         volume_down_sentence:
           name: Volume Down Phrase
           default: "(quieter|turn it down|lower the volume|volume down) [on remote speaker]"
           selector:
             text:
+              multiple: true
         volume_set_sentence:
           name: Set Absolute Volume Phrase
           default: "(set|change|turn) [the ]volume [to ]{volume}[ percent| %] [on remote speaker]"
           selector:
             text:
+              multiple: true
         stop_sentence:
           name: Stop Music Phrase
           default: "(stop|cancel|pause|hush|shut up) [the ](music|audio|radio|playback) [on remote speaker]"
           selector:
             text:
+              multiple: true
         play_sentence:
           name: Resume / Play Music Phrase
           default: "(play|start|begin|resume) [the ](music|audio|radio|playback) [on remote speaker]"
           selector:
             text:
+              multiple: true
 
 mode: single
 

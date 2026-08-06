@@ -6,8 +6,9 @@ blueprint:
   description: >
     ### 🛒 Shopping List Reader for AVA
     
-    Reads out the current items on your shopping list from any AVA assistant. This blueprint relies on the music assistant
-    media players have the same name as the AVA device. So media_player.xxx must match assist_satellite.xxx
+    Reads out, adds, removes, or clears items on your shopping list from any AVA assistant. 
+    This blueprint relies on the music assistant media players having the same name as the AVA device. 
+    So `media_player.xxx` must match `assist_satellite.xxx`.
   domain: automation
   input:
     # --- Core Hardware Options Group ---
@@ -25,15 +26,16 @@ blueprint:
                 - domain: todo
         listname:
           name: Todo list name 
-          description: The name of the list.
+          description: The name of the list spoken by the assistant.
           default: "Shopping list"
           selector:
             text:
         display:
           name: Display HTML page on device
-          description: Toggle to display web page on device
+          description: Toggle to display web page on device.
+          default: false
           selector:
-            boolean:
+            boolean: {}
         html:
           name: HTML display
           description: Enter URL of page to display on device. 
@@ -41,13 +43,13 @@ blueprint:
           selector:
             text:
 
-    # --- Collapsible Voice Phrases Section with Syntax Guide ---
+    # --- Read List Voice Phrases ---
     read_todo:
       name: Read todo
       icon: mdi:account-voice
       collapsed: false
       description: >
-        Voice sentences that will read shopping list.
+        Voice sentences that will read the shopping list out loud.
 
         <br>
 
@@ -60,21 +62,18 @@ blueprint:
             * *Example:* `[what is] on the list` matches both "on the list" and "what is on the list".
             
           * <b>(Pipes | inside | parentheses)</b> = Alternative words (OR). Matches any single phrase.
-            * *Example:* `(read me|tell me)` matches "read me..." or "give me...".
+            * *Example:* `(read me|tell me)` matches "read me..." or "tell me...".
         </details>
       input:
-        readtodo_sentence_1:
-          name: Primary Read todo 
-          description: The primary phrase to ask for the list.
-          default: "(Read|tell me) [my] shopping list"
+        readtodo_sentence:
+          name: Read todo phrase
+          description: The phrase used to ask for items on the list.
+          default: "(Read|tell me|what's on) [my|the] shopping list"
           selector:
             text:
-        readtodo_sentence_2:
-          name: Secondary Read todo 
-          description: The secondary phrase to ask for the list.
-          default: "(what|what's) on (my|the) shopping list"
-          selector:
-            text:
+              multiple: true
+
+    # --- Speech Output Profile ---
     speech_profile_options:
       name: Shopping List Speech
       icon: mdi:chat
@@ -92,149 +91,88 @@ blueprint:
           * <b>{items}</b> = The dynamically formatted list of items (e.g., "apples, milk, and bread").
           * <b>{count}</b> = The total number of items currently on your list.
           * <b>{name}</b> = Name of the list.
-          * <b>items </b>  = Items will be auto-corrected to item if count is 1
         </details>
       input:
         shopping_text_template:
           name: Spoken Text Template
-          description: Edit the script. Use the curly bracket placeholder tags defined in the guide above.
+          description: Edit the speech phrasing. Use the curly bracket placeholder tags defined in the guide above.
           default: >-
             You have {count} items on your {name}. You need {items}.
           selector:
             text:
+              multiline: true
         empty_list_text:
           name: Empty List Phrase
           description: What the assistant says if there is nothing on your shopping list.
           default: "Your {name} is completely empty right now."
           selector:
             text:
+              multiline: true
+
+    # --- Add Item Voice Phrases ---
     add_todo:
       name: Add todo
       icon: mdi:account-voice
       collapsed: false
       description: >
-        Voice sentences that add an item .
-
-        <br>
-
-        <details>
-          <summary><b>ℹ️ Click to view the Voice Command Syntax Guide</b></summary>
-          <br>
-          When editing the phrases below, use these rules to tweak your phrases:
-          
-          * <b>[Square Brackets]</b> = Optional words. Matches with or without them.
-            * *Example:* `[what is] on the list` matches both "on the list" and "what is on the list".
-            
-          * <b>(Pipes | inside | parentheses)</b> = Alternative words (OR). Matches any single phrase.
-            * *Example:* `(read me|tell me)` matches "read me..." or "give me...".
-        </details>
+        Voice sentences that add an item to your list.
       input:
-        addtodo_sentence_1:
-          name: Primary add to todo 
-          description: The primary phrase to add to the list.
-          default: "Add {item} to [my] (shopping|todo) list"
+        addtodo_sentence:
+          name: Add to todo phrase
+          description: Phrase to add an item to the list.
+          default: "(Add|include) {item} (to|on) [my] (shopping|todo) list"
           selector:
             text:
-        addtodo_sentence_2:
-          name: Secondary add to  todo 
-          description: The secondary phrase to add to the list.
-          default: "include {item} on [my] (shopping|todo) List "
-          selector:
-            text:
+              multiple: true
+
+    # --- Remove Item Voice Phrases ---
     remove_todo:
       name: Remove todo
       icon: mdi:account-voice
       collapsed: false
       description: >
-        Voice sentences that will remove an item from your shopping list.
-
-        <br>
-
-        <details>
-          <summary><b>ℹ️ Click to view the Voice Command Syntax Guide</b></summary>
-          <br>
-          When editing the phrases below, use these rules to tweak your phrases:
-          
-          * <b>[Square Brackets]</b> = Optional words. Matches with or without them.
-            * *Example:* `[what is] on the list` matches both "on the list" and "what is on the list".
-            
-          * <b>(Pipes | inside | parentheses)</b> = Alternative words (OR). Matches any single phrase.
-            * *Example:* `(read me|tell me)` matches "read me..." or "give me...".
-        </details>
+        Voice sentences that will remove a single item from your shopping list.
       input:
-        removetodo_sentence_1:
-          name: Primary Remove todo 
-          description: The primary phrase to remove an item from the list.
-          default: "Remove {item} from [my] (shopping|todo) list"
+        removetodo_sentence:
+          name: Remove todo phrase
+          description: Phrase to remove an item from the list.
+          default: "(Remove|subtract) {item} from [my] (shopping|todo) list"
           selector:
             text:
-        removetodo_sentence_2:
-          name: Secondary Remove todo 
-          description: The secondary phrase to ask for the list.
-          default: "Subtract {item} from [my] (shopping|todo) list"
-          selector:
-            text:
+              multiple: true
+
+    # --- Delete All Voice Phrases ---
     delete_todo:
       name: Delete todo
       icon: mdi:account-voice
       collapsed: false
       description: >
-        Voice sentences that will remove all from your shopping list.
-
-        <br>
-
-        <details>
-          <summary><b>ℹ️ Click to view the Voice Command Syntax Guide</b></summary>
-          <br>
-          When editing the phrases below, use these rules to tweak your phrases:
-          
-          * <b>[Square Brackets]</b> = Optional words. Matches with or without them.
-            * *Example:* `[what is] on the list` matches both "on the list" and "what is on the list".
-            
-          * <b>(Pipes | inside | parentheses)</b> = Alternative words (OR). Matches any single phrase.
-            * *Example:* `(read me|tell me)` matches "read me..." or "give me...".
-        </details>
+        Voice sentences that will clear all items from your shopping list.
       input:
-        deletetodo_sentence_1:
-          name: Primary Delete todo 
-          description: The primary phrase to delete the list.
-          default: "(delete|remove|empty) (my|the) (shopping|todo) list"
+        deletetodo_sentence:
+          name: Delete todo phrase
+          description: Phrase to clear all items from the list.
+          default: "(delete|remove|empty) [all items from] (my|the) (shopping|todo) list"
           selector:
             text:
-        deletetodo_sentence_2:
-          name: Secondary Delete todo 
-          description: The secondary phrase to delete the list.
-          default: "(delete|remove|empty) all items from (my|the) (shopping|todo) list"
-          selector:
-            text:
-
-
-
+              multiple: true
 
 mode: single
 
 trigger:
   - trigger: conversation
-    command:
-      - !input readtodo_sentence_1
-      - !input readtodo_sentence_2
+    command: !input readtodo_sentence
     id: readtodo
   - trigger: conversation
-    command:
-      - !input addtodo_sentence_1
-      - !input addtodo_sentence_2
+    command: !input addtodo_sentence
     id: addtodo
   - trigger: conversation
-    command:
-      - !input removetodo_sentence_1
-      - !input removetodo_sentence_2
+    command: !input removetodo_sentence
     id: removetodo
   - trigger: conversation
-    command:
-      - !input deletetodo_sentence_1
-      - !input deletetodo_sentence_2
+    command: !input deletetodo_sentence
     id: deletetodo
-        
+
 condition: []
 
 action:
@@ -243,11 +181,13 @@ action:
       name: !input listname
       url: !input html
       display: !input display
-      item: "{{ trigger.slots.item | default('')|capitalize }}"
-      entity: "{{trigger.satellite_id}}"
-      device: "{{ device_name(entity)}}"
+      item: "{{ trigger.slots.item | default('', true) | capitalize }}"
+      entity: "{{ trigger.satellite_id }}"
+      device: "{{ device_name(entity) }}"
       text_br: "text.{{ device }}_remote_browser_url"
-      switch_ss: "switch.{{ device  }}_screensaver_display"
+      switch_ss: "switch.{{ device }}_screensaver_display"
+
+  # Handle optional browser screen wake-up and page redirect
   - if:
       - condition: template
         value_template: "{{ 'true' if display and entity is not none else 'false' }}"
@@ -258,67 +198,73 @@ action:
       - action: text.set_value
         metadata: {}
         target:
-          entity_id: "{{text_br}}"
+          entity_id: "{{ text_br }}"
         data:
-          value: "{{url}}"
+          value: "{{ url }}"
+
+  # Execute intent based on voice sentence matched
   - choose:
+      # --- Intent 1: READ LIST ---
       - conditions:
           - condition: template
-            value_template: "{{ trigger.id in ['readtodo'] }}"
+            value_template: "{{ trigger.id == 'readtodo' }}"
         sequence:
           - action: todo.get_items
             target:
-              entity_id: "{{todo}}"
+              entity_id: "{{ todo }}"
             data:
               status: needs_action
             response_variable: list_output
           - variables:
-                raw_text_template: !input shopping_text_template
-                empty_phrase: !input empty_list_text
-                raw_items: "{{ list_output[todo]['items'] | map(attribute='summary') | list }}"
-                item_count: "{{ raw_items | length }}"
-                formatted_items: >-
-                  {% if item_count > 1 %}
-                    {{ raw_items[:-1] | join(', ') }} and {{ raw_items[-1] }}
-                  {% elif item_count == 1 %}
-                    {{ raw_items[0] }}
-                  {% else %}
-                    none
-                  {% endif %}
-                final_speech: >-
-                    {% if item_count == 1 %}
-                      {{ raw_text_template 
-                        | replace('{count}', item_count)
-                        | replace('{items}', formatted_items)
-                        | replace('{name}', name)
-                        | replace('items','item') }}
-                    {% elif item_count > 1 %}
-                      {{ raw_text_template 
-                        | replace('{count}', item_count)
-                        | replace('{items}', formatted_items)
-                        | replace('{name}', name)}}
-                    {% else %}
-                        {{ empty_phrase| replace('{name}', name) }}
-                    {% endif %}
+              raw_text_template: !input shopping_text_template
+              empty_phrase: !input empty_list_text
+              raw_items: "{{ list_output[todo]['items'] | map(attribute='summary') | list }}"
+              item_count: "{{ raw_items | length }}"
+              formatted_items: >-
+                {% if item_count > 1 %}
+                  {{ raw_items[:-1] | join(', ') }} and {{ raw_items[-1] }}
+                {% elif item_count == 1 %}
+                  {{ raw_items[0] }}
+                {% else %}
+                  none
+                {% endif %}
+              final_speech: >-
+                {% if item_count == 1 %}
+                  {{ raw_text_template 
+                    | replace('{count}', item_count)
+                    | replace('{items}', formatted_items)
+                    | replace('{name}', name)
+                    | replace('items', 'item') }}
+                {% elif item_count > 1 %}
+                  {{ raw_text_template 
+                    | replace('{count}', item_count)
+                    | replace('{items}', formatted_items)
+                    | replace('{name}', name) }}
+                {% else %}
+                  {{ empty_phrase | replace('{name}', name) }}
+                {% endif %}
+          - set_conversation_response: "{{ final_speech }}"
 
-          - set_conversation_response: "{{final_speech}}"
+      # --- Intent 2: ADD ITEM ---
       - conditions:
           - condition: template
-            value_template: "{{ trigger.id in ['addtodo'] }}"
+            value_template: "{{ trigger.id == 'addtodo' }}"
         sequence:
           - action: todo.add_item
             data:
-              item: "{{item}}"
+              item: "{{ item }}"
             target:
-              entity_id: "{{todo}}"
-          - set_conversation_response: "{{item }} added to {{name}}"
+              entity_id: "{{ todo }}"
+          - set_conversation_response: "{{ item }} added to {{ name }}"
+
+      # --- Intent 3: REMOVE SINGLE ITEM ---
       - conditions:
           - condition: template
-            value_template: "{{ trigger.id in ['removetodo'] }}"
+            value_template: "{{ trigger.id == 'removetodo' }}"
         sequence:
           - action: todo.get_items
             target:
-              entity_id: "{{todo}}"
+              entity_id: "{{ todo }}"
             data:
               status: needs_action
             response_variable: current_list
@@ -333,20 +279,22 @@ action:
             then:
               - action: todo.remove_item
                 data:
-                  item: "{{item}}"
+                  item: "{{ item }}"
                 target:
-                  entity_id: "{{todo}}"
-              - set_conversation_response: "{{item}} removed from {{name}}"
+                  entity_id: "{{ todo }}"
+              - set_conversation_response: "{{ item }} removed from {{ name }}"
             else:
-              - set_conversation_response: "{{item}} is not on your {{name}}"
+              - set_conversation_response: "{{ item }} is not on your {{ name }}"
+
+      # --- Intent 4: DELETE ALL ITEMS ---
       - conditions:
           - condition: template
-            value_template: "{{ trigger.id in ['deletetodo'] }}"
+            value_template: "{{ trigger.id == 'deletetodo' }}"
         sequence:
           - action: todo.get_items
             response_variable: all_items
             target:
-              entity_id: "{{todo}}"
+              entity_id: "{{ todo }}"
           - repeat:
               for_each: "{{ all_items[todo]['items'] }}"
               sequence:
@@ -354,8 +302,5 @@ action:
                   data:
                     item: "{{ repeat.item.summary }}"
                   target:
-                    entity_id: "{{todo}}"    
-
-          - set_conversation_response: "All items removed from {{name}}"
-
-  
+                    entity_id: "{{ todo }}"
+          - set_conversation_response: "All items removed from {{ name }}"

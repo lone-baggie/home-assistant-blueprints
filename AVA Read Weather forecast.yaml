@@ -35,6 +35,7 @@ blueprint:
           default: http://192.168.0.254:8123/local/weather.html
           selector:
             text:
+              multiple: true
 
     # --- Collapsible Voice Phrases Section with Syntax Guide ---
     voice_command_options:
@@ -59,42 +60,27 @@ blueprint:
             * *Example:* `(tell me|give me)` matches "tell me..." or "give me...".
         </details>
       input:
-        weather_sentence_1:
+        weather_sentence:
           name: Weather Command 
-          description: The primary phrase used to ask for the general weather.
+          description: The phrase used to ask for the general weather.
           default: "what's the weather [today]"
           selector:
             text:
-        weather_sentence_2:
-          name: Secondary Weather Command 
-          description: The secondary phrase to ask for a weather report.
-          default: "(give me |tell me |read) [the] weather [forecast]"
-          selector:
-            text:
-        rain_sentence_1:
+              multiple: true
+        rain_sentence:
           name: Rain Command
-          description: Primary phrase to ask if it will rain today.
+          description: Phrase to ask if it will rain today or if an umbrella is needed.
           default: "[will it|is it going to] rain [today]"
           selector:
             text:
-        rain_sentence_2:
-          name: Secondary Rain Command
-          description: Alternative phrase to check rain or umbrella needs.
-          default: "do i need an umbrella [today]"
-          selector:
-            text:
-        temp_sentence_1:
+              multiple: true
+        temp_sentence:
           name: Temperature Command
-          description: Primary phrase to ask what temperature it will be.
+          description: Phrase to ask what temperature it will be.
           default: "[what is |what will be |whats] [the] temperature [today]"
           selector:
             text:
-        temp_sentence_2:
-          name: Secondary Temperature Command
-          description: Alternative phrase to ask about heat or cold.
-          default: "how (hot|cold) is it going to be [today]"
-          selector:
-            text:
+              multiple: true
 
     # --- Collapsible Weather Wording Map ---
     weather_mapping_options:
@@ -194,13 +180,11 @@ mode: single
 
 trigger:
   - trigger: conversation
-    command:
-      - !input weather_sentence_1
-      - !input weather_sentence_2
-      - !input rain_sentence_1
-      - !input rain_sentence_2
-      - !input temp_sentence_1
-      - !input temp_sentence_2
+    command: !input weather_sentence
+  - trigger: conversation
+    command: !input rain_sentence
+  - trigger: conversation
+    command: !input temp_sentence
 
 condition: []
 

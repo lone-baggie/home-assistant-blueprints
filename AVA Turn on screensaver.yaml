@@ -4,10 +4,11 @@ blueprint:
   homeassistant:
     min_version: 2024.6.0
   description: >
-    ### 📺 Turn on screen saver. This blueprint relies on all AVA entities to have the same name as the AVA device
-    they belong too. So switch.xxx_screensaver_display must match the device name xxx.
-    
-  domain: automation 
+    ### 📺 Turn on screen saver
+    This blueprint relies on all AVA entities to have the same name as the AVA device
+    they belong to. So `switch.xxx_screensaver_display` must match the device name `xxx`.
+
+  domain: automation
   input:
     voice_command_options:
       name: Voice Phrases
@@ -30,47 +31,36 @@ blueprint:
             * *Example:* `(tell me|give me)` matches "tell me..." or "give me...".
         </details>
       input:
-        screen_sentence_1:
-          name: Primary Screen saver command 
-          description: The phrase to turn on Screen saver
-          default: "(display|start|open|) [the] screensaver [now]"
+        screen_sentence:
+          name: Screen saver command
+          description: The phrase(s) to turn on the screen saver.
+          default:
+            - "(display|start|open|) [the] screen saver [now]"
+            - "(display|start|open|) [the] screensaver [now]"
           selector:
             text:
-        screen_sentence_2:
-          name: Secondary Screen saver command 
-          description: The phrase to turn on Screen saver
-          default: "turn on the  screensaver [now]"
-          selector:
-            text:
-
-
+              multiple: true
 
 mode: single
 
 trigger:
   - trigger: conversation
-    command:
-      - !input screen_sentence_1
-      - !input screen_sentence_2
-      
+    command: !input screen_sentence
 
 condition: []
 
 action:
-
   - variables:
-      entity: "{{trigger.satellite_id}}"
-      device: "{{ device_name(entity)}}"
+      entity: "{{ trigger.satellite_id }}"
+      device: "{{ device_name(entity) if entity is not none else '' }}"
       switch_ss: "switch.{{ device }}_screensaver_display"
 
+  # Ensure a valid satellite triggered this before trying to toggle the switch
   - if:
-    - condition: template
-      value_template: "{{ entity is none}}"
+      - condition: template
+        value_template: "{{ entity is not none and device != '' }}"
     then:
-      - stop: ""
-  - action: switch.turn_on
-    metadata: {}
-    target:
-      entity_id: "{{switch_ss}}"
-    data: {}
-  
+      - action: switch.turn_on
+        target:
+          entity_id: "{{ switch_ss }}"
+      - set_conversation_response: "Turning on screensaver"

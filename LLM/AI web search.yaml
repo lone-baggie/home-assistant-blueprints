@@ -100,6 +100,8 @@ trigger:
   - platform: conversation
     command:
       - "what {query}"
+      - "What's {query}"
+      - "whats {query}"
       - "where {query}"
       - "how {query}"
       - "who {query}"

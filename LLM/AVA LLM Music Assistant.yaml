@@ -1,5 +1,5 @@
 blueprint:
-  name: "AVA LLM Music Assistant (AI Task Edition)"
+  name: "AVA LLM Music Assistant"
   description: "High-performance voice control for Music Assistant with dynamic satellite target detection, structured extraction using ai_task.generate_data, fast-path hardware controls, and strict remote speaker validation."
   author: Lonebaggie
   homeassistant:

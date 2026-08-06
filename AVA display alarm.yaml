@@ -4,7 +4,7 @@ blueprint:
   homeassistant:
     min_version: 2024.6.0
   description: >
-    ### 🕰 Displays current alarms  on screen. Needs voice alarms intergration. .
+    ### 🕰 Displays current alarms on screen. Needs voice alarms intergration. .
   domain: automation 
   input:
     html:
@@ -34,39 +34,32 @@ blueprint:
             * *Example:* `(tell me|give me)` matches "tell me..." or "give me...".
         </details>
       input:
-        alarm_sentence_1:
+        alarm_sentence:
           name: Alarm Command 
-          description: The primary phrase used to display the alarms.
-          default: "show me the alarms"
+          description: The phrase used to display the alarms.
+          default: "show [the] alarms"
           selector:
             text:
-        alarm_sentence_2:
-          name: Secondary alarm Command 
-          description: The secondary phrase to display the alarms.
-          default: "(display|show) [the] alarms"
-          selector:
-            text:
+              multiple: true
+
 mode: single
 
 trigger:
   - trigger: conversation
-    command:
-      - !input alarm_sentence_1
-      - !input alarm_sentence_2
+    command: !input alarm_sentence
 
 condition: []
 
 action:
-
   - variables:
       url: !input html
-      entity: "{{trigger.satellite_id}}"
-      device: "{{ device_name(entity)}}"
+      entity: "{{ trigger.satellite_id }}"
+      device: "{{ device_name(entity) }}"
       text_br: "text.{{ device }}_remote_browser_url"
       switch_ss: "switch.{{ device }}_screensaver_display"
   - if:
-    - condition: template
-      value_template: "{{ entity is none}}"
+      - condition: template
+        value_template: "{{ entity is none }}"
     then:
       - stop: ""
   - action: switch.turn_off
@@ -75,10 +68,6 @@ action:
   - action: text.set_value
     metadata: {}
     target:
-      entity_id: "{{text_br}}"
+      entity_id: "{{ text_br }}"
     data:
-      value: "{{url}}"
-
-
-
-  
+      value: "{{ url }}"
